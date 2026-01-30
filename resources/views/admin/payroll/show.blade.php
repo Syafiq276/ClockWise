@@ -60,20 +60,43 @@
             </div>
         </div>
 
+        <!-- Work Summary -->
+        <div class="p-6 border-b">
+            <h3 class="text-sm font-medium text-gray-500 mb-4">Work Summary</h3>
+            <div class="grid grid-cols-4 gap-4 text-center">
+                <div class="bg-blue-50 rounded-lg p-3">
+                    <p class="text-xl font-bold text-blue-600">{{ $payroll->days_worked }}</p>
+                    <p class="text-xs text-gray-500">Days</p>
+                </div>
+                <div class="bg-indigo-50 rounded-lg p-3">
+                    <p class="text-xl font-bold text-indigo-600">{{ $payroll->total_hours }}</p>
+                    <p class="text-xs text-gray-500">Total Hours</p>
+                </div>
+                <div class="bg-purple-50 rounded-lg p-3">
+                    <p class="text-xl font-bold text-purple-600">{{ $payroll->overtime_hours }}</p>
+                    <p class="text-xs text-gray-500">OT Hours</p>
+                </div>
+                <div class="bg-green-50 rounded-lg p-3">
+                    <p class="text-xl font-bold text-green-600">RM {{ number_format($payroll->hourly_rate, 2) }}</p>
+                    <p class="text-xs text-gray-500">Hourly Rate</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Earnings -->
         <div class="p-6 border-b">
             <h3 class="text-sm font-medium text-gray-500 mb-4">Earnings</h3>
             <table class="w-full">
                 <tbody class="divide-y divide-gray-100">
                     <tr>
-                        <td class="py-2 text-gray-600">Regular Hours</td>
-                        <td class="py-2 text-center text-gray-600">{{ $payroll->total_hours - $payroll->overtime_hours }} hours × RM {{ number_format($payroll->hourly_rate, 2) }}</td>
+                        <td class="py-2 text-gray-600">Basic Pay</td>
+                        <td class="py-2 text-center text-gray-600">{{ $payroll->total_hours - $payroll->overtime_hours }} hrs × RM {{ number_format($payroll->hourly_rate, 2) }}</td>
                         <td class="py-2 text-right font-medium">RM {{ number_format(($payroll->total_hours - $payroll->overtime_hours) * $payroll->hourly_rate, 2) }}</td>
                     </tr>
                     @if($payroll->overtime_hours > 0)
                         <tr>
                             <td class="py-2 text-gray-600">Overtime</td>
-                            <td class="py-2 text-center text-gray-600">{{ $payroll->overtime_hours }} hours × RM {{ number_format($payroll->hourly_rate * 1.5, 2) }}</td>
+                            <td class="py-2 text-center text-gray-600">{{ $payroll->overtime_hours }} hrs × RM {{ number_format($payroll->hourly_rate * 1.5, 2) }}</td>
                             <td class="py-2 text-right font-medium text-purple-600">RM {{ number_format($payroll->overtime_pay, 2) }}</td>
                         </tr>
                     @endif
@@ -88,22 +111,54 @@
                 <tfoot>
                     <tr class="border-t-2">
                         <td class="py-3 font-medium text-gray-800" colspan="2">Gross Pay</td>
-                        <td class="py-3 text-right font-bold text-lg">RM {{ number_format($payroll->gross_pay, 2) }}</td>
+                        <td class="py-3 text-right font-bold text-lg">RM {{ number_format($payroll->gross_pay + ($payroll->allowances ?? 0), 2) }}</td>
                     </tr>
                 </tfoot>
             </table>
         </div>
 
-        <!-- Deductions -->
+        <!-- Statutory Deductions -->
+        <div class="p-6 border-b bg-red-50">
+            <h3 class="text-sm font-medium text-red-600 mb-4">Statutory Deductions (Employee)</h3>
+            <table class="w-full">
+                <tbody class="divide-y divide-red-100">
+                    <tr>
+                        <td class="py-2 text-gray-600">KWSP / EPF ({{ $payroll->epf_rate_employee ?? 11 }}%)</td>
+                        <td class="py-2 text-right font-medium text-red-600">- RM {{ number_format($payroll->epf_employee ?? 0, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 text-gray-600">PERKESO / SOCSO</td>
+                        <td class="py-2 text-right font-medium text-red-600">- RM {{ number_format($payroll->socso_employee ?? 0, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 text-gray-600">SIP / EIS</td>
+                        <td class="py-2 text-right font-medium text-red-600">- RM {{ number_format($payroll->eis_employee ?? 0, 2) }}</td>
+                    </tr>
+                    @if(($payroll->pcb ?? 0) > 0)
+                    <tr>
+                        <td class="py-2 text-gray-600">PCB / MTD (Tax)</td>
+                        <td class="py-2 text-right font-medium text-red-600">- RM {{ number_format($payroll->pcb, 2) }}</td>
+                    </tr>
+                    @endif
+                </tbody>
+                <tfoot>
+                    <tr class="border-t-2 border-red-200">
+                        <td class="py-2 font-medium text-gray-800">Total Statutory</td>
+                        <td class="py-2 text-right font-bold text-red-600">- RM {{ number_format($payroll->total_statutory ?? 0, 2) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Other Deductions -->
         @if($payroll->deductions > 0)
-            <div class="p-6 border-b bg-red-50">
-                <h3 class="text-sm font-medium text-red-500 mb-4">Deductions</h3>
+            <div class="p-6 border-b bg-orange-50">
+                <h3 class="text-sm font-medium text-orange-600 mb-4">Other Deductions</h3>
                 <table class="w-full">
                     <tbody>
                         <tr>
-                            <td class="py-2 text-gray-600">Deductions</td>
-                            <td class="py-2 text-center text-gray-500 text-sm">{{ $payroll->deduction_notes ?? '-' }}</td>
-                            <td class="py-2 text-right font-medium text-red-600">- RM {{ number_format($payroll->deductions, 2) }}</td>
+                            <td class="py-2 text-gray-600">{{ $payroll->deduction_notes ?? 'Other Deductions' }}</td>
+                            <td class="py-2 text-right font-medium text-orange-600">- RM {{ number_format($payroll->deductions, 2) }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -114,7 +169,7 @@
         <div class="p-6 bg-gradient-to-r from-green-50 to-emerald-50">
             <div class="flex justify-between items-center">
                 <div>
-                    <p class="text-sm text-gray-500">Net Pay</p>
+                    <p class="text-sm text-gray-500">Net Pay (Take Home)</p>
                     <p class="text-3xl font-bold text-green-600">RM {{ number_format($payroll->net_pay, 2) }}</p>
                 </div>
                 <div class="text-right">
@@ -122,6 +177,29 @@
                         <p class="text-sm text-gray-500">Paid on</p>
                         <p class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($payroll->paid_at)->format('d M Y') }}</p>
                     @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- Employer Contribution -->
+        <div class="p-4 bg-blue-50 border-t">
+            <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Employer Contribution</h4>
+            <div class="grid grid-cols-4 gap-4 text-sm">
+                <div>
+                    <span class="text-gray-600">EPF:</span>
+                    <span class="font-medium ml-1">RM {{ number_format($payroll->epf_employer ?? 0, 2) }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-600">SOCSO:</span>
+                    <span class="font-medium ml-1">RM {{ number_format($payroll->socso_employer ?? 0, 2) }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-600">EIS:</span>
+                    <span class="font-medium ml-1">RM {{ number_format($payroll->eis_employer ?? 0, 2) }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-600 font-semibold">Total:</span>
+                    <span class="font-bold ml-1">RM {{ number_format($payroll->employer_contribution ?? 0, 2) }}</span>
                 </div>
             </div>
         </div>

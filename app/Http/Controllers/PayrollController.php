@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\MalaysianStatutory;
 use App\Models\Attendance;
 use App\Models\Payroll;
 use App\Models\User;
@@ -127,6 +128,9 @@ class PayrollController extends Controller
         $overtimePay = $overtimeHours * $overtimeRate;
         $grossPay = $regularPay + $overtimePay;
 
+        // Calculate Malaysian statutory deductions
+        $statutory = MalaysianStatutory::calculateAll($grossPay);
+
         $calculation = [
             'user_id' => $employee->id,
             'employee_name' => $employee->name,
@@ -142,6 +146,17 @@ class PayrollController extends Controller
             'basic_pay' => $regularPay,
             'overtime_pay' => $overtimePay,
             'gross_pay' => $grossPay,
+            // Statutory deductions
+            'epf_employee' => $statutory['epf']['employee'],
+            'epf_employer' => $statutory['epf']['employer'],
+            'epf_rate_employee' => $statutory['epf']['employee_rate'],
+            'epf_rate_employer' => $statutory['epf']['employer_rate'],
+            'socso_employee' => $statutory['socso']['employee'],
+            'socso_employer' => $statutory['socso']['employer'],
+            'eis_employee' => $statutory['eis']['employee'],
+            'eis_employer' => $statutory['eis']['employer'],
+            'total_statutory' => $statutory['total_employee'],
+            'employer_contribution' => $statutory['total_employer'],
         ];
 
         $employees = User::where('role', 'employee')->orderBy('name')->get();
@@ -170,6 +185,19 @@ class PayrollController extends Controller
             'overtime_hours' => ['required', 'numeric', 'min:0'],
             'overtime_pay' => ['required', 'numeric', 'min:0'],
             'gross_pay' => ['required', 'numeric', 'min:0'],
+            // Statutory deductions
+            'epf_employee' => ['required', 'numeric', 'min:0'],
+            'epf_employer' => ['required', 'numeric', 'min:0'],
+            'epf_rate_employee' => ['required', 'numeric', 'min:0'],
+            'epf_rate_employer' => ['required', 'numeric', 'min:0'],
+            'socso_employee' => ['required', 'numeric', 'min:0'],
+            'socso_employer' => ['required', 'numeric', 'min:0'],
+            'eis_employee' => ['required', 'numeric', 'min:0'],
+            'eis_employer' => ['required', 'numeric', 'min:0'],
+            'pcb' => ['nullable', 'numeric', 'min:0'],
+            'total_statutory' => ['required', 'numeric', 'min:0'],
+            'employer_contribution' => ['required', 'numeric', 'min:0'],
+            // Other
             'deductions' => ['nullable', 'numeric', 'min:0'],
             'deduction_notes' => ['nullable', 'string', 'max:500'],
             'allowances' => ['nullable', 'numeric', 'min:0'],
@@ -188,6 +216,7 @@ class PayrollController extends Controller
 
         $deductions = $validated['deductions'] ?? 0;
         $allowances = $validated['allowances'] ?? 0;
+        $pcb = $validated['pcb'] ?? 0;
         $netPay = $validated['net_pay'];
 
         Payroll::create([
@@ -201,6 +230,19 @@ class PayrollController extends Controller
             'overtime_hours' => $validated['overtime_hours'],
             'overtime_pay' => $validated['overtime_pay'],
             'gross_pay' => $validated['gross_pay'],
+            // Statutory
+            'epf_employee' => $validated['epf_employee'],
+            'epf_employer' => $validated['epf_employer'],
+            'epf_rate_employee' => $validated['epf_rate_employee'],
+            'epf_rate_employer' => $validated['epf_rate_employer'],
+            'socso_employee' => $validated['socso_employee'],
+            'socso_employer' => $validated['socso_employer'],
+            'eis_employee' => $validated['eis_employee'],
+            'eis_employer' => $validated['eis_employer'],
+            'pcb' => $pcb,
+            'total_statutory' => $validated['total_statutory'],
+            'employer_contribution' => $validated['employer_contribution'],
+            // Other
             'deductions' => $deductions,
             'deduction_notes' => $validated['deduction_notes'],
             'allowances' => $allowances,
