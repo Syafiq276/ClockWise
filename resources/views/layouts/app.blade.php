@@ -18,12 +18,18 @@
                     <a href="{{ route('dashboard') }}" class="hover:text-slate-600 {{ request()->routeIs('dashboard') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Dashboard
                     </a>
+                    <a href="{{ route('attendance.history') }}" class="hover:text-slate-600 {{ request()->routeIs('attendance.history') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                        My Attendance
+                    </a>
                     @if(auth()->user()->role === 'admin')
                     <a href="{{ route('admin.dashboard') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.dashboard') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Admin Panel
                     </a>
                     <a href="{{ route('admin.employees') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.employees*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Employees
+                    </a>
+                    <a href="{{ route('admin.attendance') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.attendance') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                        Attendance Log
                     </a>
                     @endif
                 </nav>

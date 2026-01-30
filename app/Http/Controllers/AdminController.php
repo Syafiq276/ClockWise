@@ -84,6 +84,49 @@ class AdminController extends Controller
     }
 
     /**
+     * Show all attendance records (Admin view)
+     */
+    public function attendanceHistory(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->role === 'admin', 403);
+
+        $query = Attendance::with('user')
+            ->orderBy('date', 'desc')
+            ->orderBy('clock_in', 'desc');
+
+        // Filter by employee
+        if ($request->filled('employee')) {
+            $query->where('user_id', $request->employee);
+        }
+
+        // Filter by month
+        if ($request->filled('month')) {
+            $date = Carbon::parse($request->month . '-01');
+            $query->whereYear('date', $date->year)
+                  ->whereMonth('date', $date->month);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $attendances = $query->paginate(20)->withQueryString();
+        $employees = User::where('role', 'employee')->orderBy('name')->get();
+
+        // Summary stats
+        $stats = [
+            'total_records' => Attendance::count(),
+            'today_present' => Attendance::whereDate('date', today())->count(),
+            'this_month' => Attendance::whereYear('date', now()->year)
+                                      ->whereMonth('date', now()->month)->count(),
+        ];
+
+        return view('admin.attendance.index', compact('attendances', 'employees', 'stats'));
+    }
+
+    /**
      * Employee Management - List all employees
      */
     public function employees(Request $request)

@@ -40,10 +40,14 @@ Route::middleware(['auth', CheckNetworkContext::class])->group(function () {
 
     Route::post('clock-in', [AttendanceController::class, 'store'])->name('clock.in');
     Route::post('clock-out', [AttendanceController::class, 'update'])->name('clock.out');
+    
+    // Employee attendance history
+    Route::get('attendance/history', [AttendanceController::class, 'history'])->name('attendance.history');
 
     // Admin routes
     Route::get('admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::post('admin/set-ip', [AdminController::class, 'updateOfficeIp'])->name('admin.set-ip');
+    Route::get('admin/attendance', [AdminController::class, 'attendanceHistory'])->name('admin.attendance');
 
     // Employee management routes
     Route::get('admin/employees', [AdminController::class, 'employees'])->name('admin.employees');
