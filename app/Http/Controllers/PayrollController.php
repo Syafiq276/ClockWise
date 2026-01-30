@@ -342,20 +342,23 @@ class PayrollController extends Controller
     {
         $user = $request->user();
 
-        $payrolls = Payroll::where('user_id', $user->id)
+        $payslips = Payroll::where('user_id', $user->id)
             ->whereIn('status', ['approved', 'paid'])
             ->orderBy('period_start', 'desc')
             ->paginate(12);
 
-        $stats = [
-            'total_earned' => Payroll::where('user_id', $user->id)
-                ->where('status', 'paid')->sum('net_pay'),
-            'this_year' => Payroll::where('user_id', $user->id)
-                ->where('status', 'paid')
-                ->whereYear('period_start', now()->year)->sum('net_pay'),
-        ];
+        // Calculate totals for the current year
+        $totalEarned = Payroll::where('user_id', $user->id)
+            ->where('status', 'paid')
+            ->whereYear('period_start', now()->year)
+            ->sum('net_pay');
 
-        return view('payroll.my-payslips', compact('payrolls', 'stats'));
+        $totalHours = Payroll::where('user_id', $user->id)
+            ->where('status', 'paid')
+            ->whereYear('period_start', now()->year)
+            ->sum('total_hours');
+
+        return view('payroll.my-payslips', compact('payslips', 'totalEarned', 'totalHours'));
     }
 
     /**

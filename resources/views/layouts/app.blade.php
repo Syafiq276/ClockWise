@@ -8,6 +8,209 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* ============================================
+           SIDEBAR NAVIGATION STYLES
+           ============================================ */
+        
+        .sidebar {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 40;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 56px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar-card:hover {
+            min-width: 200px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+        }
+        
+        .sidebar-card:hover .nav-label {
+            opacity: 1;
+            width: auto;
+            margin-left: 12px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 12px;
+            color: #64748b;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        
+        .nav-item:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        
+        .nav-item.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        
+        .nav-label {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .nav-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 8px 4px;
+        }
+        
+        .nav-section-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            padding: 8px 12px 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .sidebar-card:hover .nav-section-label {
+            opacity: 1;
+        }
+        
+        /* Mobile sidebar toggle */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 50;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .sidebar-toggle:hover {
+            transform: scale(1.05);
+        }
+        
+        .sidebar-toggle:active {
+            transform: scale(0.95);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: auto;
+                bottom: 0;
+                transform: translateY(100%);
+                width: 100%;
+                padding: 0;
+            }
+            
+            .sidebar.open {
+                transform: translateY(0);
+            }
+            
+            .sidebar-card {
+                border-radius: 20px 20px 0 0;
+                min-width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                padding: 16px 12px 24px;
+                gap: 8px;
+            }
+            
+            .sidebar-card:hover {
+                min-width: 100%;
+            }
+            
+            .nav-item {
+                flex-direction: column;
+                padding: 10px 16px;
+                gap: 4px;
+            }
+            
+            .nav-label {
+                opacity: 1;
+                width: auto;
+                margin-left: 0;
+                font-size: 11px;
+            }
+            
+            .sidebar-card:hover .nav-label {
+                margin-left: 0;
+            }
+            
+            .nav-divider, .nav-section-label {
+                display: none;
+            }
+            
+            .sidebar-toggle {
+                display: flex;
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+                padding-bottom: 80px;
+            }
+        }
+        
+        .main-content {
+            margin-left: 90px;
+            transition: margin-left 0.3s ease;
+        }
+        
+        /* Sidebar overlay for mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 35;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* ============================================
            UI FEEDBACK & ANIMATIONS
            ============================================ */
         
@@ -267,59 +470,139 @@
     <div class="toast-container" id="toastContainer"></div>
 
     @auth
-    <header class="border-b bg-white sticky top-0 z-50">
-        <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-            <div class="flex items-center gap-6">
-                <a href="{{ route('dashboard') }}" class="text-lg font-semibold">🕐 ClockWise</a>
-                <nav class="hidden md:flex items-center gap-4 text-sm">
-                    <a href="{{ route('dashboard') }}" class="hover:text-slate-600 {{ request()->routeIs('dashboard') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        Dashboard
-                    </a>
-                    <a href="{{ route('attendance.history') }}" class="hover:text-slate-600 {{ request()->routeIs('attendance.history') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        My Attendance
-                    </a>
-                    <a href="{{ route('leave.index') }}" class="hover:text-slate-600 {{ request()->routeIs('leave.*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        Leave Requests
-                    </a>
-                    <a href="{{ route('payslips.index') }}" class="hover:text-slate-600 {{ request()->routeIs('payslips.*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        Payslips
-                    </a>
-                    @if(auth()->user()->role === 'admin')
-                    <a href="{{ route('admin.dashboard') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.dashboard') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        Admin Panel
-                    </a>
-                    <a href="{{ route('admin.employees') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.employees*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        Employees
-                    </a>
-                    <a href="{{ route('admin.attendance') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.attendance') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        Attendance Log
-                    </a>
-                    <a href="{{ route('admin.leave') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.leave') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        Leave Mgmt
-                    </a>
-                    <a href="{{ route('admin.reports') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.reports') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        Reports
-                    </a>
-                    <a href="{{ route('admin.payroll.index') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.payroll.*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        Payroll
-                    </a>
-                    <a href="{{ route('admin.audit-logs') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.audit-logs') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
-                        🔐 Audit
-                    </a>
-                    @endif
-                </nav>
+    <!-- Top Header - Profile & Logout only -->
+    <header class="border-b bg-white sticky top-0 z-30">
+        <div class="mx-auto flex items-center justify-between px-6 py-3 main-content">
+            <div class="flex items-center gap-3">
+                <a href="{{ route('dashboard') }}" class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    🕐 ClockWise
+                </a>
+                @if(auth()->user()->role === 'admin')
+                <span class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full">Admin</span>
+                @endif
             </div>
             <div class="flex items-center gap-4">
-                <span class="text-sm text-slate-500 hidden sm:inline">{{ auth()->user()->name }}</span>
+                <div class="hidden sm:flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white text-sm font-medium">
+                        {{ substr(auth()->user()->name, 0, 1) }}
+                    </div>
+                    <div class="text-sm">
+                        <div class="font-medium text-slate-700">{{ auth()->user()->name }}</div>
+                        <div class="text-xs text-slate-400">{{ auth()->user()->position ?? 'Employee' }}</div>
+                    </div>
+                </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button class="btn-secondary rounded-lg px-3 py-1.5 text-sm ripple">
-                        Log out
+                    <button class="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        <span class="hidden sm:inline">Log out</span>
                     </button>
                 </form>
             </div>
         </div>
     </header>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Floating Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-card">
+            <!-- Employee Section -->
+            <span class="nav-section-label">Menu</span>
+            
+            <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="Dashboard">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            
+            <a href="{{ route('attendance.history') }}" class="nav-item {{ request()->routeIs('attendance.history') ? 'active' : '' }}" title="My Attendance">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="nav-label">Attendance</span>
+            </a>
+            
+            <a href="{{ route('leave.index') }}" class="nav-item {{ request()->routeIs('leave.*') ? 'active' : '' }}" title="Leave Requests">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span class="nav-label">Leave</span>
+            </a>
+            
+            <a href="{{ route('payslips.index') }}" class="nav-item {{ request()->routeIs('payslips.*') ? 'active' : '' }}" title="Payslips">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span class="nav-label">Payslips</span>
+            </a>
+
+            @if(auth()->user()->role === 'admin')
+            <div class="nav-divider"></div>
+            <span class="nav-section-label">Admin</span>
+            
+            <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" title="Admin Dashboard">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <span class="nav-label">Overview</span>
+            </a>
+            
+            <a href="{{ route('admin.employees') }}" class="nav-item {{ request()->routeIs('admin.employees*') ? 'active' : '' }}" title="Employees">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span class="nav-label">Employees</span>
+            </a>
+            
+            <a href="{{ route('admin.attendance') }}" class="nav-item {{ request()->routeIs('admin.attendance') ? 'active' : '' }}" title="Attendance Log">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                <span class="nav-label">Attendance</span>
+            </a>
+            
+            <a href="{{ route('admin.leave') }}" class="nav-item {{ request()->routeIs('admin.leave') ? 'active' : '' }}" title="Leave Management">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="nav-label">Leave Mgmt</span>
+            </a>
+            
+            <a href="{{ route('admin.reports') }}" class="nav-item {{ request()->routeIs('admin.reports') ? 'active' : '' }}" title="Reports">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span class="nav-label">Reports</span>
+            </a>
+            
+            <a href="{{ route('admin.payroll.index') }}" class="nav-item {{ request()->routeIs('admin.payroll.*') ? 'active' : '' }}" title="Payroll">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="nav-label">Payroll</span>
+            </a>
+            
+            <a href="{{ route('admin.audit-logs') }}" class="nav-item {{ request()->routeIs('admin.audit-logs') ? 'active' : '' }}" title="Audit Logs">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                <span class="nav-label">Audit</span>
+            </a>
+            @endif
+        </div>
+    </nav>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+    </button>
     @endauth
 
     {{-- Toast Messages from Session --}}
@@ -339,17 +622,36 @@
     </script>
     @endif
 
-    <main class="flex-1 fade-in">
+    <main class="flex-1 fade-in @auth main-content @endauth">
         @yield('content')
     </main>
 
-    <footer class="border-t bg-white py-4 mt-auto">
+    <footer class="border-t bg-white py-4 mt-auto @auth main-content @endauth">
         <div class="mx-auto max-w-7xl px-6 text-center text-xs text-slate-400">
             &copy; {{ date('Y') }} ClockWise. Built for SME Malaysia.
         </div>
     </footer>
 
     <script>
+        // ============================================
+        // SIDEBAR TOGGLE (Mobile)
+        // ============================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const toggle = document.getElementById('sidebarToggle');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            
+            // Change toggle icon
+            if (sidebar.classList.contains('open')) {
+                toggle.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            } else {
+                toggle.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>';
+            }
+        }
+
         // ============================================
         // GLOBAL UI FEEDBACK FUNCTIONS
         // ============================================
