@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Attendance;
+use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
@@ -239,5 +240,95 @@ class AdminController extends Controller
 
         return redirect()->route('admin.employees')
             ->with('success', 'Employee deleted successfully.');
+    }
+
+    /**
+     * Display all leave requests (Admin)
+     */
+    public function leaveRequests(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->role === 'admin', 403);
+
+        $query = LeaveRequest::with('user')
+            ->orderBy('created_at', 'desc');
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by employee
+        if ($request->filled('employee')) {
+            $query->where('user_id', $request->employee);
+        }
+
+        // Filter by type
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $leaves = $query->paginate(15)->withQueryString();
+        $employees = User::where('role', 'employee')->orderBy('name')->get();
+
+        // Stats
+        $stats = [
+            'pending' => LeaveRequest::where('status', 'pending')->count(),
+            'approved_this_month' => LeaveRequest::where('status', 'approved')
+                ->whereMonth('responded_at', now()->month)
+                ->whereYear('responded_at', now()->year)->count(),
+            'total_this_month' => LeaveRequest::whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)->count(),
+        ];
+
+        return view('admin.leave.index', compact('leaves', 'employees', 'stats'));
+    }
+
+    /**
+     * Approve a leave request
+     */
+    public function approveLeave(Request $request, LeaveRequest $leave)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->role === 'admin', 403);
+
+        if ($leave->status !== 'pending') {
+            return back()->with('error', 'This request has already been processed.');
+        }
+
+        $leave->update([
+            'status' => 'approved',
+            'approved_by' => $user->id,
+            'admin_remarks' => $request->input('remarks'),
+            'responded_at' => now(),
+        ]);
+
+        return back()->with('success', 'Leave request approved successfully.');
+    }
+
+    /**
+     * Reject a leave request
+     */
+    public function rejectLeave(Request $request, LeaveRequest $leave)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->role === 'admin', 403);
+
+        if ($leave->status !== 'pending') {
+            return back()->with('error', 'This request has already been processed.');
+        }
+
+        $validated = $request->validate([
+            'remarks' => ['required', 'string', 'max:500'],
+        ]);
+
+        $leave->update([
+            'status' => 'rejected',
+            'approved_by' => $user->id,
+            'admin_remarks' => $validated['remarks'],
+            'responded_at' => now(),
+        ]);
+
+        return back()->with('success', 'Leave request rejected.');
     }
 }

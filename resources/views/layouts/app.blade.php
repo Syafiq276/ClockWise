@@ -21,6 +21,9 @@
                     <a href="{{ route('attendance.history') }}" class="hover:text-slate-600 {{ request()->routeIs('attendance.history') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         My Attendance
                     </a>
+                    <a href="{{ route('leave.index') }}" class="hover:text-slate-600 {{ request()->routeIs('leave.*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                        Leave Requests
+                    </a>
                     @if(auth()->user()->role === 'admin')
                     <a href="{{ route('admin.dashboard') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.dashboard') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Admin Panel
@@ -30,6 +33,9 @@
                     </a>
                     <a href="{{ route('admin.attendance') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.attendance') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Attendance Log
+                    </a>
+                    <a href="{{ route('admin.leave') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.leave') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                        Leave Mgmt
                     </a>
                     @endif
                 </nav>
