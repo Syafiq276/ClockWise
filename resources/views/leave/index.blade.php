@@ -11,7 +11,7 @@
             <p class="text-gray-600">View and manage your leave applications</p>
         </div>
         <a href="{{ route('leave.create') }}" 
-           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+           class="btn-primary inline-flex items-center px-4 py-2 rounded-lg ripple">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
             </svg>
@@ -19,9 +19,90 @@
         </a>
     </div>
 
+    <!-- Leave Balance Cards -->
+    @if(isset($balances))
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <!-- Annual Leave Balance -->
+        <div class="bg-white rounded-xl shadow-md p-5 card-hover">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <span class="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                    Annual Leave
+                </h3>
+                <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">
+                    {{ date('Y') }}
+                </span>
+            </div>
+            <div class="flex items-end gap-4">
+                <div class="flex-1">
+                    <p class="text-3xl font-bold text-blue-600">{{ $balances['annual']['available'] }}</p>
+                    <p class="text-sm text-gray-500">days available</p>
+                </div>
+                <div class="text-right text-sm">
+                    <p class="text-gray-600">Entitlement: <span class="font-medium">{{ $balances['annual']['entitlement'] }}</span></p>
+                    <p class="text-green-600">Used: <span class="font-medium">{{ $balances['annual']['used'] }}</span></p>
+                    @if($balances['annual']['pending'] > 0)
+                    <p class="text-amber-600">Pending: <span class="font-medium">{{ $balances['annual']['pending'] }}</span></p>
+                    @endif
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="mt-3">
+                <div class="progress-bar">
+                    @php
+                        $annualUsedPercent = $balances['annual']['entitlement'] > 0 
+                            ? (($balances['annual']['used'] + $balances['annual']['pending']) / $balances['annual']['entitlement']) * 100 
+                            : 0;
+                    @endphp
+                    <div class="progress-bar-fill" style="width: {{ min($annualUsedPercent, 100) }}%"></div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">{{ round($annualUsedPercent) }}% used</p>
+            </div>
+        </div>
+
+        <!-- MC Balance -->
+        <div class="bg-white rounded-xl shadow-md p-5 card-hover">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <span class="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                    Medical Leave
+                </h3>
+                <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded">
+                    {{ date('Y') }}
+                </span>
+            </div>
+            <div class="flex items-end gap-4">
+                <div class="flex-1">
+                    <p class="text-3xl font-bold text-red-600">{{ $balances['mc']['available'] }}</p>
+                    <p class="text-sm text-gray-500">days available</p>
+                </div>
+                <div class="text-right text-sm">
+                    <p class="text-gray-600">Entitlement: <span class="font-medium">{{ $balances['mc']['entitlement'] }}</span></p>
+                    <p class="text-green-600">Used: <span class="font-medium">{{ $balances['mc']['used'] }}</span></p>
+                    @if($balances['mc']['pending'] > 0)
+                    <p class="text-amber-600">Pending: <span class="font-medium">{{ $balances['mc']['pending'] }}</span></p>
+                    @endif
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="mt-3">
+                <div class="progress-bar">
+                    @php
+                        $mcUsedPercent = $balances['mc']['entitlement'] > 0 
+                            ? (($balances['mc']['used'] + $balances['mc']['pending']) / $balances['mc']['entitlement']) * 100 
+                            : 0;
+                    @endphp
+                    <div class="progress-bar-fill" style="width: {{ min($mcUsedPercent, 100) }}%; background: linear-gradient(90deg, #ef4444, #f97316);"></div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">{{ round($mcUsedPercent) }}% used</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-xl shadow-md p-4">
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover">
             <div class="flex items-center">
                 <div class="p-3 bg-blue-100 rounded-lg">
                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,7 +115,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-xl shadow-md p-4">
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover">
             <div class="flex items-center">
                 <div class="p-3 bg-green-100 rounded-lg">
                     <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,7 +128,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-xl shadow-md p-4">
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover">
             <div class="flex items-center">
                 <div class="p-3 bg-amber-100 rounded-lg">
                     <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,10 +166,10 @@
                 </select>
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <button type="submit" class="btn-primary px-4 py-2 rounded-lg ripple">
                     Filter
                 </button>
-                <a href="{{ route('leave.index') }}" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                <a href="{{ route('leave.index') }}" class="btn-secondary px-4 py-2 rounded-lg">
                     Clear
                 </a>
             </div>

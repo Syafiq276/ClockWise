@@ -3,15 +3,27 @@
 @section('title', 'Login - ClockWise')
 
 @section('content')
-<div class="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold">Welcome back</h1>
-        <p class="text-sm text-slate-500">Sign in to continue.</p>
+<div class="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 auth-card">
+    <div class="mb-6 text-center">
+        <h1 class="text-2xl font-bold">🕐 ClockWise</h1>
+        <p class="text-sm text-slate-500 mt-1">Sign in to continue</p>
     </div>
 
     @if ($errors->any())
-        <div class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        <div class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
             {{ $errors->first() }}
+        </div>
+    @endif
+
+    @if (session('status'))
+        <div class="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-700 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ session('status') }}
         </div>
     @endif
 
@@ -40,17 +52,20 @@
                 <input type="checkbox" name="remember" class="rounded border-slate-300" />
                 Remember me
             </label>
-            <a href="#" class="text-sm text-slate-500 hover:text-slate-700">Forgot password?</a>
+            <a href="{{ route('password.request') }}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                Forgot password?
+            </a>
         </div>
 
-        <button type="submit" class="w-full rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800">
-            Sign in
+        <button type="submit" class="btn-primary w-full rounded-lg px-4 py-2.5 font-medium relative">
+            <span class="btn-text">Sign in</span>
+            <span class="btn-loader"></span>
         </button>
     </form>
 
     <p class="mt-6 text-center text-sm text-slate-600">
         Don't have an account?
-        <a href="{{ route('register') }}" class="font-semibold text-slate-900 hover:underline">Sign up</a>
+        <a href="{{ route('register') }}" class="font-semibold text-blue-600 hover:underline">Sign up</a>
     </p>
 </div>
 @endsection

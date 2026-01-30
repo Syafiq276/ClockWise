@@ -8,6 +8,8 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 
 
 Route::get('/', function () {
@@ -20,6 +22,12 @@ Route::middleware(['guest', 'throttle:5,1'])->group(function () {
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+    
+    // Password Reset
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'show'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])->name('password.email');
+    Route::get('/reset-password/{token}', [ResetPasswordController::class, 'show'])->name('password.reset');
+    Route::post('/reset-password', [ResetPasswordController::class, 'store'])->name('password.update');
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
@@ -57,6 +65,7 @@ Route::middleware(['auth', CheckNetworkContext::class])->group(function () {
     // Employee payslips
     Route::get('payslips', [PayrollController::class, 'myPayslips'])->name('payslips.index');
     Route::get('payslips/{payroll}', [PayrollController::class, 'viewPayslip'])->name('payslips.show');
+    Route::get('payslips/{payroll}/pdf', [PayrollController::class, 'downloadPdf'])->name('payslips.pdf');
 
     // Admin routes - protected by admin middleware
     Route::middleware('admin')->prefix('admin')->group(function () {

@@ -32,6 +32,12 @@ class LeaveController extends Controller
 
         $leaves = $query->paginate(10)->withQueryString();
 
+        // Leave balances
+        $balances = [
+            'annual' => $user->getLeaveBalance('annual'),
+            'mc' => $user->getLeaveBalance('mc'),
+        ];
+
         // Stats for current year
         $currentYear = now()->year;
         $stats = [
@@ -44,7 +50,7 @@ class LeaveController extends Controller
                 ->where('status', 'pending')->count(),
         ];
 
-        return view('leave.index', compact('leaves', 'stats'));
+        return view('leave.index', compact('leaves', 'stats', 'balances'));
     }
 
     /**
@@ -52,7 +58,15 @@ class LeaveController extends Controller
      */
     public function create()
     {
-        return view('leave.create');
+        $user = Auth::user();
+        
+        // Get leave balances for all types
+        $balances = [
+            'annual' => $user->getLeaveBalance('annual'),
+            'mc' => $user->getLeaveBalance('mc'),
+        ];
+
+        return view('leave.create', compact('balances'));
     }
 
     /**
@@ -72,6 +86,18 @@ class LeaveController extends Controller
         $startDate = Carbon::parse($validated['start_date']);
         $endDate = Carbon::parse($validated['end_date']);
         $days = $startDate->diffInDays($endDate) + 1;
+
+        // Check leave balance for annual and MC
+        $user = Auth::user();
+        if (in_array($validated['type'], ['annual', 'mc'])) {
+            if (!$user->hasLeaveBalance($validated['type'], $days)) {
+                $balance = $user->getLeaveBalance($validated['type']);
+                $typeName = $validated['type'] === 'annual' ? 'Annual Leave' : 'Medical Leave';
+                return back()
+                    ->withInput()
+                    ->with('error', "Insufficient {$typeName} balance. You have {$balance['available']} days available but requested {$days} days.");
+            }
+        }
 
         // Handle file upload
         $attachmentPath = null;

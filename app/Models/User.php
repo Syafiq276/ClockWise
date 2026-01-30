@@ -25,6 +25,9 @@ class User extends Authenticatable
         'role',
         'hourly_rate',
         'position',
+        'annual_leave_entitlement',
+        'mc_entitlement',
+        'employment_start_date',
     ];
 
     /**
@@ -47,6 +50,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'employment_start_date' => 'date',
         ];
     }
 
@@ -58,5 +62,52 @@ class User extends Authenticatable
     public function leaveRequests(): HasMany
     {
         return $this->hasMany(LeaveRequest::class);
+    }
+
+    /**
+     * Get leave balance for a specific type and year
+     */
+    public function getLeaveBalance(string $type, ?int $year = null): array
+    {
+        $year = $year ?? now()->year;
+
+        $entitlement = match($type) {
+            'annual' => $this->annual_leave_entitlement ?? 12,
+            'mc' => $this->mc_entitlement ?? 14,
+            default => 0,
+        };
+
+        $used = $this->leaveRequests()
+            ->where('type', $type)
+            ->where('status', 'approved')
+            ->whereYear('start_date', $year)
+            ->sum('days');
+
+        $pending = $this->leaveRequests()
+            ->where('type', $type)
+            ->where('status', 'pending')
+            ->whereYear('start_date', $year)
+            ->sum('days');
+
+        return [
+            'entitlement' => $entitlement,
+            'used' => (int) $used,
+            'pending' => (int) $pending,
+            'balance' => $entitlement - $used,
+            'available' => $entitlement - $used - $pending, // What can still be requested
+        ];
+    }
+
+    /**
+     * Check if user has enough leave balance
+     */
+    public function hasLeaveBalance(string $type, int $days): bool
+    {
+        if (in_array($type, ['emergency', 'unpaid'])) {
+            return true; // These don't have limits
+        }
+
+        $balance = $this->getLeaveBalance($type);
+        return $balance['available'] >= $days;
     }
 }

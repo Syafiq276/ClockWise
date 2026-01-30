@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\AuditLog;
 use App\Models\Payroll;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -377,5 +378,32 @@ class PayrollController extends Controller
         $payroll->load('user');
 
         return view('payroll.payslip', compact('payroll'));
+    }
+
+    /**
+     * Download payslip as PDF
+     */
+    public function downloadPdf(Request $request, Payroll $payroll)
+    {
+        $user = $request->user();
+        
+        // Employee can only download their own, admin can download all
+        if ($user->role !== 'admin' && $payroll->user_id !== $user->id) {
+            abort(403);
+        }
+
+        // Employees can only download approved/paid
+        if ($user->role !== 'admin' && !in_array($payroll->status, ['approved', 'paid'])) {
+            abort(404);
+        }
+
+        $payroll->load('user');
+
+        $pdf = Pdf::loadView('payroll.payslip-pdf', compact('payroll'));
+        
+        $filename = 'payslip-' . $payroll->user->name . '-' . $payroll->month_year . '.pdf';
+        $filename = preg_replace('/[^A-Za-z0-9\-]/', '_', $filename);
+
+        return $pdf->download($filename);
     }
 }

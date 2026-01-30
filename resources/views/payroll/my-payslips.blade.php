@@ -58,10 +58,9 @@
         @if($payslips->count() > 0)
             <div class="divide-y divide-gray-200">
                 @foreach($payslips as $payslip)
-                    <a href="{{ route('payslips.show', $payslip) }}" 
-                       class="block p-4 hover:bg-gray-50 transition">
+                    <div class="block p-4 hover:bg-gray-50 transition table-row-hover">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center">
+                            <a href="{{ route('payslips.show', $payslip) }}" class="flex items-center flex-1">
                                 <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white">
                                     <span class="text-sm font-bold">
                                         {{ \Carbon\Carbon::parse($payslip->month_year . '-01')->format('M') }}
@@ -78,15 +77,24 @@
                                         @endif
                                     </p>
                                 </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-lg font-bold text-gray-800">RM {{ number_format($payslip->net_pay, 2) }}</p>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $payslip->getStatusBadgeClass() }}">
-                                    {{ ucfirst($payslip->status) }}
-                                </span>
+                            </a>
+                            <div class="flex items-center gap-4">
+                                <div class="text-right">
+                                    <p class="text-lg font-bold text-gray-800">RM {{ number_format($payslip->net_pay, 2) }}</p>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $payslip->getStatusBadgeClass() }}">
+                                        {{ ucfirst($payslip->status) }}
+                                    </span>
+                                </div>
+                                <a href="{{ route('payslips.pdf', $payslip) }}" 
+                                   class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition"
+                                   title="Download PDF">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </a>
                             </div>
                         </div>
-                    </a>
+                    </div>
                 @endforeach
             </div>
 
