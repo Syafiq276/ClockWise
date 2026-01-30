@@ -11,7 +11,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Global security headers for all web requests
+        $middleware->appendToGroup('web', \App\Http\Middleware\SecurityHeaders::class);
+        
+        // Network context detection (office/remote)
         $middleware->appendToGroup('web', \App\Http\Middleware\CheckNetworkContext::class);
+
+        // Register middleware aliases
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\IsAdmin::class,
+        ]);
+
+        // Rate limiting for authentication routes
+        $middleware->throttleApi('60,1'); // 60 requests per minute for API
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

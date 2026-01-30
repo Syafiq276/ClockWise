@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Attendance;
+use App\Models\AuditLog;
 use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
@@ -11,14 +12,12 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\Rules\Password;
 
 class AdminController extends Controller
 {
     public function dashboard(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $employees = User::where('role', 'employee')
             ->with(['attendances' => function ($query) {
                 $query->orderByDesc('date');
@@ -74,12 +73,17 @@ class AdminController extends Controller
 
     public function updateOfficeIp(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
+        $oldIp = Setting::where('key', 'office_ip')->value('value');
 
         Setting::updateOrCreate(
             ['key' => 'office_ip'],
             ['value' => $request->ip()]
+        );
+
+        AuditLog::log(
+            'settings.updated',
+            "Office IP changed from {$oldIp} to {$request->ip()}",
+            Setting::class
         );
 
         return back()->with('success', 'Office IP updated.');
@@ -90,9 +94,6 @@ class AdminController extends Controller
      */
     public function attendanceHistory(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $query = Attendance::with('user')
             ->orderBy('date', 'desc')
             ->orderBy('clock_in', 'desc');
@@ -133,9 +134,6 @@ class AdminController extends Controller
      */
     public function employees(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $employees = User::where('role', 'employee')
             ->orderBy('name')
             ->paginate(10);
@@ -146,11 +144,8 @@ class AdminController extends Controller
     /**
      * Show create employee form
      */
-    public function createEmployee(Request $request)
+    public function createEmployee()
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         return view('admin.employees.create');
     }
 
@@ -159,18 +154,19 @@ class AdminController extends Controller
      */
     public function storeEmployee(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(8)->letters()->mixedCase()->numbers()->symbols(),
+            ],
             'position' => ['nullable', 'string', 'max:255'],
             'hourly_rate' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        User::create([
+        $employee = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
@@ -179,6 +175,13 @@ class AdminController extends Controller
             'hourly_rate' => $validated['hourly_rate'] ?? 0,
         ]);
 
+        AuditLog::log(
+            'employee.created',
+            "Created employee: {$employee->name} ({$employee->email})",
+            User::class,
+            $employee->id
+        );
+
         return redirect()->route('admin.employees')
             ->with('success', 'Employee created successfully.');
     }
@@ -186,10 +189,8 @@ class AdminController extends Controller
     /**
      * Show edit employee form
      */
-    public function editEmployee(Request $request, User $employee)
+    public function editEmployee(User $employee)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
         abort_unless($employee->role === 'employee', 404);
 
         return view('admin.employees.edit', compact('employee'));
@@ -200,17 +201,21 @@ class AdminController extends Controller
      */
     public function updateEmployee(Request $request, User $employee)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
         abort_unless($employee->role === 'employee', 404);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $employee->id],
-            'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'nullable',
+                'confirmed',
+                Password::min(8)->letters()->mixedCase()->numbers()->symbols(),
+            ],
             'position' => ['nullable', 'string', 'max:255'],
             'hourly_rate' => ['nullable', 'numeric', 'min:0'],
         ]);
+
+        $oldValues = $employee->only(['name', 'email', 'position', 'hourly_rate']);
 
         $employee->update([
             'name' => $validated['name'],
@@ -224,6 +229,15 @@ class AdminController extends Controller
             $employee->update(['password' => Hash::make($validated['password'])]);
         }
 
+        AuditLog::log(
+            'employee.updated',
+            "Updated employee: {$employee->name}",
+            User::class,
+            $employee->id,
+            $oldValues,
+            $employee->only(['name', 'email', 'position', 'hourly_rate'])
+        );
+
         return redirect()->route('admin.employees')
             ->with('success', 'Employee updated successfully.');
     }
@@ -231,13 +245,22 @@ class AdminController extends Controller
     /**
      * Delete employee (soft delete)
      */
-    public function destroyEmployee(Request $request, User $employee)
+    public function destroyEmployee(User $employee)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
         abort_unless($employee->role === 'employee', 404);
 
+        $employeeName = $employee->name;
+        $employeeEmail = $employee->email;
+        $employeeId = $employee->id;
+
         $employee->delete();
+
+        AuditLog::log(
+            'employee.deleted',
+            "Deleted employee: {$employeeName} ({$employeeEmail})",
+            User::class,
+            $employeeId
+        );
 
         return redirect()->route('admin.employees')
             ->with('success', 'Employee deleted successfully.');
@@ -248,9 +271,6 @@ class AdminController extends Controller
      */
     public function leaveRequests(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $query = LeaveRequest::with('user')
             ->orderBy('created_at', 'desc');
 
@@ -290,19 +310,23 @@ class AdminController extends Controller
      */
     public function approveLeave(Request $request, LeaveRequest $leave)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         if ($leave->status !== 'pending') {
             return back()->with('error', 'This request has already been processed.');
         }
 
         $leave->update([
             'status' => 'approved',
-            'approved_by' => $user->id,
+            'approved_by' => $request->user()->id,
             'admin_remarks' => $request->input('remarks'),
             'responded_at' => now(),
         ]);
+
+        AuditLog::log(
+            'leave.approved',
+            "Approved {$leave->type} request for {$leave->user->name}",
+            LeaveRequest::class,
+            $leave->id
+        );
 
         return back()->with('success', 'Leave request approved successfully.');
     }
@@ -312,9 +336,6 @@ class AdminController extends Controller
      */
     public function rejectLeave(Request $request, LeaveRequest $leave)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         if ($leave->status !== 'pending') {
             return back()->with('error', 'This request has already been processed.');
         }
@@ -325,10 +346,17 @@ class AdminController extends Controller
 
         $leave->update([
             'status' => 'rejected',
-            'approved_by' => $user->id,
+            'approved_by' => $request->user()->id,
             'admin_remarks' => $validated['remarks'],
             'responded_at' => now(),
         ]);
+
+        AuditLog::log(
+            'leave.rejected',
+            "Rejected {$leave->type} request for {$leave->user->name}: {$validated['remarks']}",
+            LeaveRequest::class,
+            $leave->id
+        );
 
         return back()->with('success', 'Leave request rejected.');
     }
@@ -338,9 +366,6 @@ class AdminController extends Controller
      */
     public function reports(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         // Get date range (default: current month)
         $startDate = $request->filled('start_date') 
             ? Carbon::parse($request->start_date) 
@@ -431,5 +456,45 @@ class AdminController extends Controller
             'startDate',
             'endDate'
         ));
+    }
+
+    /**
+     * Security Audit Logs
+     */
+    public function auditLogs(Request $request)
+    {
+        $query = AuditLog::with('user')
+            ->orderBy('created_at', 'desc');
+
+        // Filter by action type
+        if ($request->filled('action')) {
+            $query->where('action', 'like', $request->action . '%');
+        }
+
+        // Filter by user
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Filter by date range
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        $logs = $query->paginate(50)->withQueryString();
+        $users = User::orderBy('name')->get();
+
+        // Stats
+        $stats = [
+            'total_logs' => AuditLog::count(),
+            'failed_logins_today' => AuditLog::where('action', 'auth.login_failed')
+                ->whereDate('created_at', today())->count(),
+            'changes_today' => AuditLog::whereDate('created_at', today())->count(),
+        ];
+
+        return view('admin.audit-logs', compact('logs', 'users', 'stats'));
     }
 }

@@ -46,6 +46,9 @@
                     <a href="{{ route('admin.payroll.index') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.payroll.*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Payroll
                     </a>
+                    <a href="{{ route('admin.audit-logs') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.audit-logs') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                        🔐 Audit
+                    </a>
                     @endif
                 </nav>
             </div>

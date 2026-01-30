@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\MalaysianStatutory;
 use App\Models\Attendance;
+use App\Models\AuditLog;
 use App\Models\Payroll;
 use App\Models\User;
 use Carbon\Carbon;
@@ -17,9 +18,6 @@ class PayrollController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $query = Payroll::with('user')
             ->orderBy('created_at', 'desc');
 
@@ -54,11 +52,8 @@ class PayrollController extends Controller
     /**
      * Show generate payroll form
      */
-    public function create(Request $request)
+    public function create()
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $employees = User::where('role', 'employee')->orderBy('name')->get();
         
         // Default to previous month
@@ -72,9 +67,6 @@ class PayrollController extends Controller
      */
     public function calculate(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $validated = $request->validate([
             'employee_id' => ['required', 'exists:users,id'],
             'month_year' => ['required', 'date_format:Y-m'],
@@ -171,9 +163,6 @@ class PayrollController extends Controller
      */
     public function store(Request $request)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
             'month_year' => ['required', 'date_format:Y-m'],
@@ -249,8 +238,16 @@ class PayrollController extends Controller
             'allowance_notes' => $validated['allowance_notes'],
             'net_pay' => $netPay,
             'status' => 'draft',
-            'generated_by' => $user->id,
+            'generated_by' => $request->user()->id,
         ]);
+
+        $employee = User::find($validated['user_id']);
+        AuditLog::log(
+            'payroll.created',
+            "Created payroll for {$employee->name} ({$validated['month_year']}) - RM " . number_format($netPay, 2),
+            Payroll::class,
+            $payroll->id ?? null
+        );
 
         return redirect()->route('admin.payroll.index')
             ->with('success', 'Payroll generated successfully.');
@@ -259,11 +256,8 @@ class PayrollController extends Controller
     /**
      * Show payroll details
      */
-    public function show(Request $request, Payroll $payroll)
+    public function show(Payroll $payroll)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         $payroll->load('user', 'generator');
 
         return view('admin.payroll.show', compact('payroll'));
@@ -274,14 +268,18 @@ class PayrollController extends Controller
      */
     public function approve(Request $request, Payroll $payroll)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         if ($payroll->status !== 'draft') {
             return back()->with('error', 'Only draft payrolls can be approved.');
         }
 
         $payroll->update(['status' => 'approved']);
+
+        AuditLog::log(
+            'payroll.approved',
+            "Approved payroll for {$payroll->user->name} ({$payroll->month_year}) - RM " . number_format($payroll->net_pay, 2),
+            Payroll::class,
+            $payroll->id
+        );
 
         return back()->with('success', 'Payroll approved successfully.');
     }
@@ -291,9 +289,6 @@ class PayrollController extends Controller
      */
     public function markPaid(Request $request, Payroll $payroll)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         if ($payroll->status !== 'approved') {
             return back()->with('error', 'Only approved payrolls can be marked as paid.');
         }
@@ -303,22 +298,37 @@ class PayrollController extends Controller
             'paid_at' => now(),
         ]);
 
+        AuditLog::log(
+            'payroll.paid',
+            "Paid payroll for {$payroll->user->name} ({$payroll->month_year}) - RM " . number_format($payroll->net_pay, 2),
+            Payroll::class,
+            $payroll->id
+        );
+
         return back()->with('success', 'Payroll marked as paid.');
     }
 
     /**
      * Delete payroll (only draft)
      */
-    public function destroy(Request $request, Payroll $payroll)
+    public function destroy(Payroll $payroll)
     {
-        $user = $request->user();
-        abort_unless($user && $user->role === 'admin', 403);
-
         if ($payroll->status !== 'draft') {
             return back()->with('error', 'Only draft payrolls can be deleted.');
         }
 
+        $employeeName = $payroll->user->name;
+        $monthYear = $payroll->month_year;
+        $payrollId = $payroll->id;
+
         $payroll->delete();
+
+        AuditLog::log(
+            'payroll.deleted',
+            "Deleted draft payroll for {$employeeName} ({$monthYear})",
+            Payroll::class,
+            $payrollId
+        );
 
         return redirect()->route('admin.payroll.index')
             ->with('success', 'Payroll deleted successfully.');

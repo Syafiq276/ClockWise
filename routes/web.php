@@ -14,7 +14,8 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::middleware('guest')->group(function () {
+// Guest routes with rate limiting for security
+Route::middleware(['guest', 'throttle:5,1'])->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
@@ -57,34 +58,39 @@ Route::middleware(['auth', CheckNetworkContext::class])->group(function () {
     Route::get('payslips', [PayrollController::class, 'myPayslips'])->name('payslips.index');
     Route::get('payslips/{payroll}', [PayrollController::class, 'viewPayslip'])->name('payslips.show');
 
-    // Admin routes
-    Route::get('admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::post('admin/set-ip', [AdminController::class, 'updateOfficeIp'])->name('admin.set-ip');
-    Route::get('admin/attendance', [AdminController::class, 'attendanceHistory'])->name('admin.attendance');
+    // Admin routes - protected by admin middleware
+    Route::middleware('admin')->prefix('admin')->group(function () {
+        Route::get('dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::post('set-ip', [AdminController::class, 'updateOfficeIp'])->name('admin.set-ip');
+        Route::get('attendance', [AdminController::class, 'attendanceHistory'])->name('admin.attendance');
 
-    // Admin leave management routes
-    Route::get('admin/leave', [AdminController::class, 'leaveRequests'])->name('admin.leave');
-    Route::post('admin/leave/{leave}/approve', [AdminController::class, 'approveLeave'])->name('admin.leave.approve');
-    Route::post('admin/leave/{leave}/reject', [AdminController::class, 'rejectLeave'])->name('admin.leave.reject');
+        // Leave management
+        Route::get('leave', [AdminController::class, 'leaveRequests'])->name('admin.leave');
+        Route::post('leave/{leave}/approve', [AdminController::class, 'approveLeave'])->name('admin.leave.approve');
+        Route::post('leave/{leave}/reject', [AdminController::class, 'rejectLeave'])->name('admin.leave.reject');
 
-    // Admin reports & analytics
-    Route::get('admin/reports', [AdminController::class, 'reports'])->name('admin.reports');
+        // Reports & analytics
+        Route::get('reports', [AdminController::class, 'reports'])->name('admin.reports');
 
-    // Admin payroll management
-    Route::get('admin/payroll', [PayrollController::class, 'index'])->name('admin.payroll.index');
-    Route::get('admin/payroll/create', [PayrollController::class, 'create'])->name('admin.payroll.create');
-    Route::post('admin/payroll/calculate', [PayrollController::class, 'calculate'])->name('admin.payroll.calculate');
-    Route::post('admin/payroll', [PayrollController::class, 'store'])->name('admin.payroll.store');
-    Route::get('admin/payroll/{payroll}', [PayrollController::class, 'show'])->name('admin.payroll.show');
-    Route::post('admin/payroll/{payroll}/approve', [PayrollController::class, 'approve'])->name('admin.payroll.approve');
-    Route::post('admin/payroll/{payroll}/paid', [PayrollController::class, 'markPaid'])->name('admin.payroll.paid');
-    Route::delete('admin/payroll/{payroll}', [PayrollController::class, 'destroy'])->name('admin.payroll.destroy');
+        // Audit logs
+        Route::get('audit-logs', [AdminController::class, 'auditLogs'])->name('admin.audit-logs');
 
-    // Employee management routes
-    Route::get('admin/employees', [AdminController::class, 'employees'])->name('admin.employees');
-    Route::get('admin/employees/create', [AdminController::class, 'createEmployee'])->name('admin.employees.create');
-    Route::post('admin/employees', [AdminController::class, 'storeEmployee'])->name('admin.employees.store');
-    Route::get('admin/employees/{employee}/edit', [AdminController::class, 'editEmployee'])->name('admin.employees.edit');
-    Route::put('admin/employees/{employee}', [AdminController::class, 'updateEmployee'])->name('admin.employees.update');
-    Route::delete('admin/employees/{employee}', [AdminController::class, 'destroyEmployee'])->name('admin.employees.destroy');
+        // Payroll management
+        Route::get('payroll', [PayrollController::class, 'index'])->name('admin.payroll.index');
+        Route::get('payroll/create', [PayrollController::class, 'create'])->name('admin.payroll.create');
+        Route::post('payroll/calculate', [PayrollController::class, 'calculate'])->name('admin.payroll.calculate');
+        Route::post('payroll', [PayrollController::class, 'store'])->name('admin.payroll.store');
+        Route::get('payroll/{payroll}', [PayrollController::class, 'show'])->name('admin.payroll.show');
+        Route::post('payroll/{payroll}/approve', [PayrollController::class, 'approve'])->name('admin.payroll.approve');
+        Route::post('payroll/{payroll}/paid', [PayrollController::class, 'markPaid'])->name('admin.payroll.paid');
+        Route::delete('payroll/{payroll}', [PayrollController::class, 'destroy'])->name('admin.payroll.destroy');
+
+        // Employee management
+        Route::get('employees', [AdminController::class, 'employees'])->name('admin.employees');
+        Route::get('employees/create', [AdminController::class, 'createEmployee'])->name('admin.employees.create');
+        Route::post('employees', [AdminController::class, 'storeEmployee'])->name('admin.employees.store');
+        Route::get('employees/{employee}/edit', [AdminController::class, 'editEmployee'])->name('admin.employees.edit');
+        Route::put('employees/{employee}', [AdminController::class, 'updateEmployee'])->name('admin.employees.update');
+        Route::delete('employees/{employee}', [AdminController::class, 'destroyEmployee'])->name('admin.employees.destroy');
+    });
 });
