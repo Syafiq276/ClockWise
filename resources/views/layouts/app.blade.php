@@ -19,8 +19,11 @@
                         Dashboard
                     </a>
                     @if(auth()->user()->role === 'admin')
-                    <a href="{{ route('admin.dashboard') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                    <a href="{{ route('admin.dashboard') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.dashboard') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Admin Panel
+                    </a>
+                    <a href="{{ route('admin.employees') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.employees*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                        Employees
                     </a>
                     @endif
                 </nav>

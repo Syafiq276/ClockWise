@@ -41,6 +41,15 @@ Route::middleware(['auth', CheckNetworkContext::class])->group(function () {
     Route::post('clock-in', [AttendanceController::class, 'store'])->name('clock.in');
     Route::post('clock-out', [AttendanceController::class, 'update'])->name('clock.out');
 
+    // Admin routes
     Route::get('admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::post('admin/set-ip', [AdminController::class, 'updateOfficeIp'])->name('admin.set-ip');
+
+    // Employee management routes
+    Route::get('admin/employees', [AdminController::class, 'employees'])->name('admin.employees');
+    Route::get('admin/employees/create', [AdminController::class, 'createEmployee'])->name('admin.employees.create');
+    Route::post('admin/employees', [AdminController::class, 'storeEmployee'])->name('admin.employees.store');
+    Route::get('admin/employees/{employee}/edit', [AdminController::class, 'editEmployee'])->name('admin.employees.edit');
+    Route::put('admin/employees/{employee}', [AdminController::class, 'updateEmployee'])->name('admin.employees.update');
+    Route::delete('admin/employees/{employee}', [AdminController::class, 'destroyEmployee'])->name('admin.employees.destroy');
 });
