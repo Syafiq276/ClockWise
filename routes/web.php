@@ -5,6 +5,7 @@ use App\Http\Middleware\CheckNetworkContext;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 
@@ -52,6 +53,10 @@ Route::middleware(['auth', CheckNetworkContext::class])->group(function () {
     Route::get('leave/{leave}', [LeaveController::class, 'show'])->name('leave.show');
     Route::delete('leave/{leave}', [LeaveController::class, 'destroy'])->name('leave.destroy');
 
+    // Employee payslips
+    Route::get('payslips', [PayrollController::class, 'myPayslips'])->name('payslips.index');
+    Route::get('payslips/{payroll}', [PayrollController::class, 'viewPayslip'])->name('payslips.show');
+
     // Admin routes
     Route::get('admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::post('admin/set-ip', [AdminController::class, 'updateOfficeIp'])->name('admin.set-ip');
@@ -64,6 +69,16 @@ Route::middleware(['auth', CheckNetworkContext::class])->group(function () {
 
     // Admin reports & analytics
     Route::get('admin/reports', [AdminController::class, 'reports'])->name('admin.reports');
+
+    // Admin payroll management
+    Route::get('admin/payroll', [PayrollController::class, 'index'])->name('admin.payroll.index');
+    Route::get('admin/payroll/create', [PayrollController::class, 'create'])->name('admin.payroll.create');
+    Route::post('admin/payroll/calculate', [PayrollController::class, 'calculate'])->name('admin.payroll.calculate');
+    Route::post('admin/payroll', [PayrollController::class, 'store'])->name('admin.payroll.store');
+    Route::get('admin/payroll/{payroll}', [PayrollController::class, 'show'])->name('admin.payroll.show');
+    Route::post('admin/payroll/{payroll}/approve', [PayrollController::class, 'approve'])->name('admin.payroll.approve');
+    Route::post('admin/payroll/{payroll}/paid', [PayrollController::class, 'markPaid'])->name('admin.payroll.paid');
+    Route::delete('admin/payroll/{payroll}', [PayrollController::class, 'destroy'])->name('admin.payroll.destroy');
 
     // Employee management routes
     Route::get('admin/employees', [AdminController::class, 'employees'])->name('admin.employees');

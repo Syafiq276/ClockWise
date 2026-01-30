@@ -24,6 +24,9 @@
                     <a href="{{ route('leave.index') }}" class="hover:text-slate-600 {{ request()->routeIs('leave.*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Leave Requests
                     </a>
+                    <a href="{{ route('payslips.index') }}" class="hover:text-slate-600 {{ request()->routeIs('payslips.*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                        Payslips
+                    </a>
                     @if(auth()->user()->role === 'admin')
                     <a href="{{ route('admin.dashboard') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.dashboard') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Admin Panel
@@ -39,6 +42,9 @@
                     </a>
                     <a href="{{ route('admin.reports') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.reports') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Reports
+                    </a>
+                    <a href="{{ route('admin.payroll.index') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.payroll.*') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                        Payroll
                     </a>
                     @endif
                 </nav>
