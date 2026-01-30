@@ -37,6 +37,9 @@
                     <a href="{{ route('admin.leave') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.leave') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
                         Leave Mgmt
                     </a>
+                    <a href="{{ route('admin.reports') }}" class="hover:text-slate-600 {{ request()->routeIs('admin.reports') ? 'font-medium text-slate-900' : 'text-slate-500' }}">
+                        Reports
+                    </a>
                     @endif
                 </nav>
             </div>

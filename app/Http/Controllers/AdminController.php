@@ -8,6 +8,7 @@ use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 
@@ -330,5 +331,105 @@ class AdminController extends Controller
         ]);
 
         return back()->with('success', 'Leave request rejected.');
+    }
+
+    /**
+     * Reports & Analytics page
+     */
+    public function reports(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user && $user->role === 'admin', 403);
+
+        // Get date range (default: current month)
+        $startDate = $request->filled('start_date') 
+            ? Carbon::parse($request->start_date) 
+            : now()->startOfMonth();
+        $endDate = $request->filled('end_date') 
+            ? Carbon::parse($request->end_date) 
+            : now()->endOfMonth();
+
+        // Daily attendance data for the selected period
+        $dailyAttendance = Attendance::selectRaw('date, 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = "ontime" THEN 1 ELSE 0 END) as ontime,
+                SUM(CASE WHEN status = "late" THEN 1 ELSE 0 END) as late')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // Location breakdown
+        $locationData = Attendance::selectRaw('location_type, COUNT(*) as count')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->groupBy('location_type')
+            ->pluck('count', 'location_type')
+            ->toArray();
+
+        // Leave type breakdown
+        $leaveData = LeaveRequest::selectRaw('type, COUNT(*) as count')
+            ->where('status', 'approved')
+            ->whereBetween('start_date', [$startDate, $endDate])
+            ->groupBy('type')
+            ->pluck('count', 'type')
+            ->toArray();
+
+        // Monthly hours per employee (top 10)
+        $employeeHours = User::where('role', 'employee')
+            ->withSum(['attendances as total_minutes' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('date', [$startDate, $endDate])
+                    ->whereNotNull('clock_out');
+            }], \DB::raw('TIMESTAMPDIFF(MINUTE, clock_in, clock_out)'))
+            ->orderByDesc('total_minutes')
+            ->limit(10)
+            ->get()
+            ->map(function ($emp) {
+                return [
+                    'name' => $emp->name,
+                    'hours' => round(($emp->total_minutes ?? 0) / 60, 1),
+                ];
+            });
+
+        // Weekly trend (last 4 weeks)
+        $weeklyTrend = collect();
+        for ($i = 3; $i >= 0; $i--) {
+            $weekStart = now()->subWeeks($i)->startOfWeek();
+            $weekEnd = now()->subWeeks($i)->endOfWeek();
+            
+            $weekData = Attendance::whereBetween('date', [$weekStart, $weekEnd])
+                ->selectRaw('COUNT(*) as total, 
+                    SUM(CASE WHEN status = "ontime" THEN 1 ELSE 0 END) as ontime')
+                ->first();
+
+            $weeklyTrend->push([
+                'week' => $weekStart->format('d M'),
+                'total' => $weekData->total ?? 0,
+                'ontime' => $weekData->ontime ?? 0,
+            ]);
+        }
+
+        // Summary stats
+        $stats = [
+            'total_attendance' => Attendance::whereBetween('date', [$startDate, $endDate])->count(),
+            'unique_employees' => Attendance::whereBetween('date', [$startDate, $endDate])->distinct('user_id')->count('user_id'),
+            'avg_hours' => round(Attendance::whereBetween('date', [$startDate, $endDate])
+                ->whereNotNull('clock_out')
+                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, clock_in, clock_out)) as avg')
+                ->value('avg') / 60, 1) ?: 0,
+            'leave_days' => LeaveRequest::where('status', 'approved')
+                ->whereBetween('start_date', [$startDate, $endDate])
+                ->sum('days'),
+        ];
+
+        return view('admin.reports', compact(
+            'dailyAttendance', 
+            'locationData', 
+            'leaveData', 
+            'employeeHours', 
+            'weeklyTrend',
+            'stats',
+            'startDate',
+            'endDate'
+        ));
     }
 }

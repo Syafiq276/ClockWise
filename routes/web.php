@@ -62,6 +62,9 @@ Route::middleware(['auth', CheckNetworkContext::class])->group(function () {
     Route::post('admin/leave/{leave}/approve', [AdminController::class, 'approveLeave'])->name('admin.leave.approve');
     Route::post('admin/leave/{leave}/reject', [AdminController::class, 'rejectLeave'])->name('admin.leave.reject');
 
+    // Admin reports & analytics
+    Route::get('admin/reports', [AdminController::class, 'reports'])->name('admin.reports');
+
     // Employee management routes
     Route::get('admin/employees', [AdminController::class, 'employees'])->name('admin.employees');
     Route::get('admin/employees/create', [AdminController::class, 'createEmployee'])->name('admin.employees.create');
