@@ -23,9 +23,7 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: DATABASE_URL
-        fromDatabase:
-          name: clockwise-db
-          property: connectionString
+        sync: false
       - key: SESSION_DRIVER
         value: cookie
       - key: CACHE_STORE
@@ -35,9 +33,4 @@ services:
     healthCheckPath: /health
     autoDeploy: true
 
-databases:
-  # PostgreSQL Database (Free Tier)
-  - name: clockwise-db
-    databaseName: clockwise
-    user: clockwise
-    plan: free
+# No Render database - using Neon PostgreSQL instead
