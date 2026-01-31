@@ -11,13 +11,17 @@ class CheckNetworkContext
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $officeIp = cache()->remember('office_ip', 60, function () {
-            return Setting::where('key', 'office_ip')->value('value');
-        });
+        try {
+            // Try to get office IP from database directly (cache may not work in all environments)
+            $officeIp = Setting::where('key', 'office_ip')->value('value');
+        } catch (\Exception $e) {
+            // If database query fails, default to null
+            $officeIp = null;
+        }
 
         $userIp = $request->ip();
 
-        if ($userIp === $officeIp) {
+        if ($officeIp && $userIp === $officeIp) {
             $request->attributes->set('location_type', 'office');
         } else {
             $request->attributes->set('location_type', 'remote');
