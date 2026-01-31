@@ -79,7 +79,7 @@ Click **"Environment"** and add:
 | `APP_KEY` | *(click Generate)* |
 | `APP_URL` | https://clockwise-xxxx.onrender.com |
 | `DB_CONNECTION` | pgsql |
-| `DATABASE_URL` | *(paste Internal Database URL)* |
+| `DATABASE_URL` | *(paste Internal Database URL)* <br>⚠️ **Note:** If password has special chars (e.g. `#`, `@`), you MUST URL-encode them! |
 | `LOG_CHANNEL` | stderr |
 | `SESSION_DRIVER` | cookie |
 | `CACHE_STORE` | file |
