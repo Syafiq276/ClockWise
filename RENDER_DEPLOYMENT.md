@@ -79,10 +79,24 @@ Click **"Environment"** and add:
 | `APP_KEY` | *(click Generate)* |
 | `APP_URL` | https://clockwise-xxxx.onrender.com |
 | `DB_CONNECTION` | pgsql |
-| `DATABASE_URL` | *(paste Internal Database URL)* <br>⚠️ **Note:** If password has special chars (e.g. `#`, `@`), you MUST URL-encode them! |
+| `DATABASE_URL` | *(paste connection string)*. <br>⚠️ **Neon Users:** Ensure it ends with `?sslmode=require`. Encode password special chars! |
 | `LOG_CHANNEL` | stderr |
 | `SESSION_DRIVER` | cookie |
 | `CACHE_STORE` | file |
+
+#### Option 3: External Database (Neon / Supabase) - **RECOMMENDED**
+
+If you face "Malformed URL" errors, use separate variables instead of `DATABASE_URL`:
+
+| Key | Value | Example |
+|-----|-------|---------|
+| `DB_CONNECTION` | `pgsql` | |
+| `DB_HOST` | *(Host from Neon)* | `ep-cool-glade-123.ap-southeast-1.aws.neon.tech` |
+| `DB_PORT` | `5432` | |
+| `DB_DATABASE` | *(Database Name)* | `neondb` |
+| `DB_USERNAME` | *(Username)* | `neondb_owner` |
+| `DB_PASSWORD` | *(Password)* | *(No encoding needed)* |
+| `DB_SSLMODE` | `require` | *(Required for Neon)* |
 
 #### Step 4: Deploy
 
@@ -181,9 +195,22 @@ git push origin main
 
 ### Database Connection Error
 
-1. Verify `DATABASE_URL` is correct
-2. Check PostgreSQL service is running
-3. Ensure `DB_CONNECTION=pgsql` is set
+
+1. **Verify `DATABASE_URL` format:**
+   -   Ensure NO QUOTES around the URL value in Render.
+   -   Ensure NO SPACES at the start or end.
+   -   Format: `postgres://user:password@host/dbname`
+
+2. **Alternative: Use Individual Variables (Recommended if URL fails)**
+   If `DATABASE_URL` keeps failing, unset it and use these instead:
+   -   `DB_CONNECTION`: `pgsql`
+   -   `DB_HOST`: `dpg-xxxx.oregon-postgres.render.com` (from "Hostname" in Render DB settings)
+   -   `DB_PORT`: `5432`
+   -   `DB_DATABASE`: `clockwise`
+   -   `DB_USERNAME`: `clockwise_user`
+   -   `DB_PASSWORD`: `your_password`
+
+3. **Check PostgreSQL service is running**
 
 ### 500 Error
 
