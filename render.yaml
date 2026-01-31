@@ -6,19 +6,14 @@ services:
   - type: web
     name: clockwise
     runtime: docker
-    dockerfilePath: ./Dockerfile.render
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: APP_NAME
         value: ClockWise
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
-        value: false
-      - key: APP_URL
-        fromService:
-          type: web
-          name: clockwise
-          property: host
+        value: "false"
       - key: APP_KEY
         generateValue: true
       - key: LOG_CHANNEL
@@ -37,15 +32,7 @@ services:
         value: file
       - key: QUEUE_CONNECTION
         value: sync
-    buildCommand: |
-      composer install --no-dev --optimize-autoloader
-      php artisan config:cache
-      php artisan route:cache
-      php artisan view:cache
-    startCommand: |
-      php artisan migrate --force
-      php-fpm -D && nginx -g "daemon off;"
-    healthCheckPath: /
+    healthCheckPath: /health
     autoDeploy: true
 
 databases:
