@@ -1,8 +1,5 @@
 # Render Blueprint - ClockWise HRMS
-# https://render.com/docs/blueprint-spec
-
 services:
-  # Web Service (Laravel Application)
   - type: web
     name: clockwise
     runtime: docker
@@ -16,21 +13,20 @@ services:
         value: "false"
       - key: APP_KEY
         generateValue: true
-      - key: LOG_CHANNEL
-        value: stderr
-      - key: LOG_LEVEL
-        value: error
+      - key: APP_URL
+        value: https://clockwise-4zoi.onrender.com
       - key: DB_CONNECTION
         value: pgsql
       - key: DATABASE_URL
         sync: false
+      - key: LOG_CHANNEL
+        value: stderr
       - key: SESSION_DRIVER
         value: cookie
       - key: CACHE_STORE
         value: file
       - key: QUEUE_CONNECTION
         value: sync
-    healthCheckPath: /health
+      - key: PORT
+        value: "10000"
     autoDeploy: true
-
-# No Render database - using Neon PostgreSQL instead

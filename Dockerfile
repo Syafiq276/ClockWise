@@ -1,37 +1,14 @@
-# Render Dockerfile for ClockWise HRMS
-# Optimized for Render.com deployment
+# Simple Dockerfile for Laravel on Render
+FROM php:8.2-apache
 
-FROM php:8.2-fpm
-
-# Install system dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libpq-dev \
-    libzip-dev \
-    zip \
-    unzip \
-    nginx \
-    gettext-base \
-    procps \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    git curl zip unzip libpng-dev libonig-dev libxml2-dev libpq-dev libzip-dev \
+    && docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install \
-    pdo \
-    pdo_pgsql \
-    pdo_mysql \
-    pgsql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    zip
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -39,43 +16,27 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files
+# Copy application
 COPY . .
 
-# Install dependencies
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Create storage directories
-RUN mkdir -p storage/framework/cache/data \
-    && mkdir -p storage/framework/sessions \
-    && mkdir -p storage/framework/views \
-    && mkdir -p storage/logs \
-    && mkdir -p bootstrap/cache
+# Create storage directories and set permissions
+RUN mkdir -p storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache \
+    && chmod -R 777 storage bootstrap/cache
 
-# Set permissions
-RUN chmod -R 777 storage bootstrap/cache
+# Configure Apache
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf \
+    && sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/apache2.conf \
+    && echo '<Directory /var/www/html/public>\n    AllowOverride All\n    Require all granted\n</Directory>' >> /etc/apache2/apache2.conf
 
-# Configure Nginx - remove default and copy template
-RUN rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default
-COPY docker/nginx/render.conf /etc/nginx/conf.d/default.conf.template
+# Change Apache port to use PORT env variable (Render requirement)
+RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
+    && sed -i 's/:80/:${PORT}/g' /etc/apache2/sites-available/000-default.conf
 
-# Configure PHP-FPM to listen on Unix socket
-RUN sed -i 's|listen = 127.0.0.1:9000|listen = /tmp/php-fpm.sock|g' /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i 's|;listen.mode = 0660|listen.mode = 0666|g' /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i 's|;listen.owner = www-data|listen.owner = www-data|g' /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i 's|;listen.group = www-data|listen.group = www-data|g' /usr/local/etc/php-fpm.d/www.conf
-
-# Copy and prepare startup script
-COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh \
-    && sed -i 's/\r$//' /start.sh
-
-# Expose port (Render uses PORT env variable, defaults to 10000)
+# Expose port
 EXPOSE 10000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-10000}/health || exit 1
-
-# Start services using the startup script
-CMD ["/start.sh"]
+# Start Apache
+CMD ["apache2-foreground"]
