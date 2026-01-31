@@ -19,8 +19,15 @@ WORKDIR /var/www/html
 # Copy application
 COPY . .
 
+
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Install Node.js and build frontend assets
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install \
+    && npm run build
 
 # Create storage directories and set permissions
 RUN mkdir -p storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache \
