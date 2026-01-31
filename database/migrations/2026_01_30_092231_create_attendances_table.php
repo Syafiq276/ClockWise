@@ -18,10 +18,11 @@ return new class extends Migration
             $table->time('clock_in');
             $table->time('clock_out')->nullable();
             $table->string('status')->default('ontime');
+            
             $table->string('ip_address')->nullable();
             $table->string('location_type')->default('remote');
             $table->timestamps();
-            
+
         });
     }
 
