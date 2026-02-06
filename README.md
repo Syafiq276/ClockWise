@@ -284,40 +284,6 @@ Based on salary bands as per SOCSO Act 1969:
 
 ## ⚙️ Configuration
 
-### Environment Variables (.env)
-
-```env
-# Application
-APP_NAME=ClockWise
-APP_ENV=production
-APP_KEY=base64:...
-APP_DEBUG=false
-APP_TIMEZONE=Asia/Kuala_Lumpur
-APP_URL=https://yourdomain.com
-
-# Database
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=clockwise
-DB_USERNAME=root
-DB_PASSWORD=secret
-
-# Mail (for password reset)
-MAIL_MAILER=smtp
-MAIL_HOST=mail.yourdomain.com
-MAIL_PORT=465
-MAIL_USERNAME=noreply@yourdomain.com
-MAIL_PASSWORD=your_password
-MAIL_ENCRYPTION=ssl
-MAIL_FROM_ADDRESS=noreply@yourdomain.com
-MAIL_FROM_NAME="ClockWise"
-
-# Session & Cache
-SESSION_DRIVER=file
-CACHE_STORE=file
-QUEUE_CONNECTION=sync
-```
 
 ### System Settings (Admin Panel)
 
