@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClockWise - HRMS Presentation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #818CF8;
+            --primary-dark: #3730A3;
+            --accent: #06B6D4;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --dark: #1E1B4B;
+            --gray: #6B7280;
+            --light: #F8FAFC;
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #0F0E1A;
+            color: #E2E8F0;
+            line-height: 1.6;
+        }
+
+        /* ── Slide Container ── */
+        .slide {
+            width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            scroll-snap-align: start;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-inner {
+            max-width: 1100px;
+            width: 100%;
+            z-index: 2;
+        }
+
+        /* ── Slide Number ── */
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.3);
+            font-weight: 500;
+        }
+
+        /* ── Navigation Dots ── */
+        .nav-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-dot:hover, .nav-dot.active {
+            background: var(--primary-light);
+            transform: scale(1.3);
+        }
+
+        /* ── Backgrounds ── */
+        .bg-gradient-hero {
+            background: linear-gradient(135deg, #1E1B4B 0%, #312E81 30%, #4F46E5 70%, #06B6D4 100%);
+        }
+
+        .bg-dark {
+            background: #0F0E1A;
+        }
+
+        .bg-dark-alt {
+            background: #161425;
+        }
+
+        .bg-gradient-accent {
+            background: linear-gradient(135deg, #0F0E1A 0%, #1E1B4B 100%);
+        }
+
+        .bg-gradient-cta {
+            background: linear-gradient(135deg, #312E81 0%, #4F46E5 50%, #06B6D4 100%);
+        }
+
+        /* ── Decorative Elements ── */
+        .glow-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .glow-1 {
+            width: 400px; height: 400px;
+            background: var(--primary);
+            top: -100px; right: -100px;
+        }
+
+        .glow-2 {
+            width: 300px; height: 300px;
+            background: var(--accent);
+            bottom: -80px; left: -80px;
+        }
+
+        .glow-3 {
+            width: 250px; height: 250px;
+            background: var(--primary-light);
+            top: 50%; left: -50px;
+        }
+
+        /* ── Typography ── */
+        .hero-title {
+            font-size: 72px;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+        }
+
+        .hero-title .gradient-text {
+            background: linear-gradient(135deg, #818CF8, #06B6D4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .slide-title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .slide-subtitle {
+            font-size: 18px;
+            color: var(--primary-light);
+            font-weight: 500;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .section-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .hero-subtitle {
+            font-size: 22px;
+            color: #94A3B8;
+            max-width: 600px;
+            line-height: 1.7;
+            margin-bottom: 40px;
+        }
+
+        .tagline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(79, 70, 229, 0.15);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 14px;
+            color: var(--primary-light);
+            margin-bottom: 30px;
+        }
+
+        /* ── Cards ── */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .card-grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(79, 70, 229, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+
+        .card-icon.purple { background: rgba(79, 70, 229, 0.2); }
+        .card-icon.cyan { background: rgba(6, 182, 212, 0.2); }
+        .card-icon.green { background: rgba(16, 185, 129, 0.2); }
+        .card-icon.amber { background: rgba(245, 158, 11, 0.2); }
+        .card-icon.red { background: rgba(239, 68, 68, 0.2); }
+        .card-icon.blue { background: rgba(59, 130, 246, 0.2); }
+
+        .card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .card p {
+            font-size: 14px;
+            color: #94A3B8;
+            line-height: 1.6;
+        }
+
+        /* ── Stats Bar ── */
+        .stats-row {
+            display: flex;
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 42px;
+            font-weight: 800;
+            color: var(--white);
+        }
+
+        .stat-number .unit {
+            font-size: 24px;
+            color: var(--primary-light);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* ── Problem / Solution ── */
+        .problem-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .problem-list li {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 18px;
+            padding: 16px 24px;
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 12px;
+        }
+
+        .problem-list li .icon {
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .solution-list li {
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+        }
+
+        /* ── Tech Stack ── */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .tech-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .tech-item:hover {
+            border-color: rgba(79, 70, 229, 0.4);
+            background: rgba(79, 70, 229, 0.08);
+        }
+
+        .tech-item .emoji {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .tech-item .name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .tech-item .desc {
+            font-size: 12px;
+            color: #64748B;
+            margin-top: 2px;
+        }
+
+        /* ── Workflow ── */
+        .workflow-steps {
+            display: flex;
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .workflow-step {
+            flex: 1;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 28px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .workflow-step .step-num {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .workflow-step h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .workflow-step p {
+            font-size: 13px;
+            color: #94A3B8;
+        }
+
+        .workflow-arrow {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            color: var(--primary-light);
+            flex-shrink: 0;
+        }
+
+        /* ── Table ── */
+        .styled-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+
+        .styled-table th {
+            text-align: left;
+            padding: 12px 20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748B;
+            font-weight: 600;
+        }
+
+        .styled-table td {
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.03);
+            font-size: 15px;
+        }
+
+        .styled-table tr td:first-child {
+            border-radius: 10px 0 0 10px;
+        }
+
+        .styled-table tr td:last-child {
+            border-radius: 0 10px 10px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-purple { background: rgba(79,70,229,0.2); color: #A5B4FC; }
+        .badge-green { background: rgba(16,185,129,0.2); color: #6EE7B7; }
+        .badge-cyan { background: rgba(6,182,212,0.2); color: #67E8F9; }
+
+        /* ── Screenshot Placeholder ── */
+        .screenshot-placeholder {
+            background: rgba(255,255,255,0.03);
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 80px 40px;
+            text-align: center;
+            color: #475569;
+            font-size: 16px;
+        }
+
+        .screenshot-placeholder .hint {
+            font-size: 13px;
+            color: #334155;
+            margin-top: 8px;
+        }
+
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .screenshots-grid .screenshot-placeholder {
+            padding: 50px 20px;
+        }
+
+        /* ── Compliance ── */
+        .compliance-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .compliance-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .compliance-card .emoji {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .compliance-card .name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .compliance-card .detail {
+            font-size: 13px;
+            color: #94A3B8;
+            margin-top: 4px;
+        }
+
+        .compliance-card .rate {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-top: 8px;
+        }
+
+        /* ── CTA ── */
+        .cta-box {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 32px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .cta-url {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            word-break: break-all;
+        }
+
+        .cta-creds {
+            font-size: 14px;
+            color: #94A3B8;
+            margin-top: 6px;
+        }
+
+        .qr-placeholder {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-size: 11px;
+            text-align: center;
+            flex-shrink: 0;
+            padding: 10px;
+        }
+
+        /* ── Security ── */
+        .security-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .security-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+        }
+
+        .security-item .check {
+            color: var(--success);
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .security-item span {
+            font-size: 15px;
+        }
+
+        /* ── Keyboard Nav Hint ── */
+        .nav-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 12px;
+            color: #64748B;
+            z-index: 100;
+            opacity: 1;
+            transition: opacity 2s;
+        }
+
+        .nav-hint.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .kbd {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            font-size: 11px;
+            margin: 0 2px;
+        }
+
+        /* ── Print / PDF ── */
+        @media print {
+            html { scroll-snap-type: none; }
+            .slide {
+                page-break-after: always;
+                min-height: 100vh;
+            }
+            .nav-dots, .nav-hint { display: none; }
+            body { background: white; color: #1E1B4B; }
+            .slide { background: white !important; }
+            .card { border-color: #E2E8F0; }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .slide { padding: 40px 24px; }
+            .hero-title { font-size: 42px; }
+            .slide-title { font-size: 28px; }
+            .card-grid, .tech-grid, .compliance-grid { grid-template-columns: 1fr; }
+            .card-grid-2 { grid-template-columns: 1fr; }
+            .workflow-steps { flex-direction: column; }
+            .workflow-arrow { transform: rotate(90deg); justify-content: center; }
+            .stats-row { flex-wrap: wrap; gap: 20px; }
+            .screenshots-grid { grid-template-columns: 1fr; }
+            .security-grid { grid-template-columns: 1fr; }
+            .cta-box { flex-direction: column; text-align: center; }
+            .nav-dots { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Dots -->
+    <div class="nav-dots" id="navDots"></div>
+
+    <!-- Keyboard Hint -->
+    <div class="nav-hint" id="navHint">
+        Navigate: <span class="kbd">↑</span> <span class="kbd">↓</span> or <span class="kbd">Scroll</span> &nbsp;|&nbsp; Press <span class="kbd">F</span> for fullscreen
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 1: Title / Hero -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-gradient-hero" id="slide-1">
+        <div class="glow-circle glow-1"></div>
+        <div class="glow-circle glow-2"></div>
+        <div class="slide-inner">
+            <div class="tagline">🕐 Human Resource Management System</div>
+            <h1 class="hero-title">
+                Clock<span class="gradient-text">Wise</span>
+            </h1>
+            <p class="hero-subtitle">
+                A modern, lightweight HRMS designed for Malaysian SMEs. 
+                Automate attendance, leave, and payroll — fully compliant with 
+                EPF, SOCSO & EIS regulations.
+            </p>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-number">6<span class="unit">+</span></div>
+                    <div class="stat-label">Core Modules</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">19</div>
+                    <div class="stat-label">API Endpoints</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">28</div>
+                    <div class="stat-label">Automated Tests</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">100<span class="unit">%</span></div>
+                    <div class="stat-label">MY Compliant</div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-number">01 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 2: The Problem -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-dark" id="slide-2">
+        <div class="glow-circle glow-3"></div>
+        <div class="slide-inner">
+            <div class="section-label">The Problem</div>
+            <h2 class="slide-title">Why Malaysian SMEs Struggle</h2>
+            <p class="slide-subtitle" style="text-transform: none; letter-spacing: 0; color: #94A3B8; font-size: 16px; margin-bottom: 30px;">
+                Many small businesses still manage HR processes manually, leading to inefficiency, errors, and compliance risks.
+            </p>
+            <ul class="problem-list">
+                <li>
+                    <span class="icon">📋</span>
+                    <span><strong>Manual attendance tracking</strong> — paper sign-in sheets, no real-time visibility</span>
+                </li>
+                <li>
+                    <span class="icon">🧮</span>
+                    <span><strong>Error-prone payroll</strong> — manual calculation of EPF, SOCSO, EIS is tedious and risky</span>
+                </li>
+                <li>
+                    <span class="icon">📝</span>
+                    <span><strong>Leave management chaos</strong> — WhatsApp requests, Excel tracking, no audit trail</span>
+                </li>
+                <li>
+                    <span class="icon">⏱️</span>
+                    <span><strong>15+ hours/month wasted</strong> — HR admin tasks that should be automated</span>
+                </li>
+                <li>
+                    <span class="icon">⚠️</span>
+                    <span><strong>Compliance risk</strong> — incorrect statutory deductions can lead to penalties</span>
+                </li>
+            </ul>
+        </div>
+        <div class="slide-number">02 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 3: The Solution -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-dark-alt" id="slide-3">
+        <div class="glow-circle glow-1"></div>
+        <div class="slide-inner">
+            <div class="section-label">The Solution</div>
+            <h2 class="slide-title">ClockWise Automates Everything</h2>
+            <p class="slide-subtitle" style="text-transform: none; letter-spacing: 0; color: #94A3B8; font-size: 16px; margin-bottom: 30px;">
+                One platform to handle attendance, leave, payroll, and reporting — built for Malaysian employment law.
+            </p>
+            <ul class="problem-list solution-list">
+                <li>
+                    <span class="icon">✅</span>
+                    <span><strong>One-click clock in/out</strong> — with automatic office/remote detection via IP</span>
+                </li>
+                <li>
+                    <span class="icon">✅</span>
+                    <span><strong>Auto-calculated payroll</strong> — EPF, SOCSO, EIS deducted per Malaysian rates</span>
+                </li>
+                <li>
+                    <span class="icon">✅</span>
+                    <span><strong>Digital leave management</strong> — apply, approve, track balances in real-time</span>
+                </li>
+                <li>
+                    <span class="icon">✅</span>
+                    <span><strong>Instant PDF payslips</strong> — professional, downloadable, audit-ready</span>
+                </li>
+                <li>
+                    <span class="icon">✅</span>
+                    <span><strong>Visual reports & analytics</strong> — 10 interactive charts across 5 categories</span>
+                </li>
+            </ul>
+        </div>
+        <div class="slide-number">03 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 4: Key Features -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-dark" id="slide-4">
+        <div class="glow-circle glow-2"></div>
+        <div class="slide-inner">
+            <div class="section-label">Key Features</div>
+            <h2 class="slide-title">Everything HR Needs</h2>
+            <div style="height: 30px;"></div>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon purple">⏰</div>
+                    <h3>Attendance Tracking</h3>
+                    <p>One-click clock in/out with IP-based location detection. Late arrival flagging and overtime tracking.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon cyan">📅</div>
+                    <h3>Leave Management</h3>
+                    <p>Annual, MC, emergency & unpaid leave. File attachments, approval workflow, and balance tracking.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon green">💰</div>
+                    <h3>Payroll System</h3>
+                    <p>Auto-calculate gross, deductions (EPF/SOCSO/EIS/PCB), overtime, allowances, and net pay.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon amber">📊</div>
+                    <h3>Reports & Analytics</h3>
+                    <p>10 interactive charts — attendance trends, payroll costs, performance scorecards, and more.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon red">🔐</div>
+                    <h3>Security & Audit</h3>
+                    <p>Full audit logging, role-based access, security headers, and session encryption.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon blue">📁</div>
+                    <h3>Digital Assets</h3>
+                    <p>Upload, organise, and share company files. Folder-based with grid/list views and EXIF support.</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-number">04 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 5: How It Works -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-dark-alt" id="slide-5">
+        <div class="glow-circle glow-1"></div>
+        <div class="slide-inner">
+            <div class="section-label">How It Works</div>
+            <h2 class="slide-title">Simple Daily Workflow</h2>
+            <div style="height: 30px;"></div>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="step-num">1</div>
+                    <h4>Clock In</h4>
+                    <p>Employee clicks "Clock In" — system records time, IP, and location (office/remote)</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-num">2</div>
+                    <h4>Work Day</h4>
+                    <p>System tracks hours, detects overtime, and monitors attendance status</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-num">3</div>
+                    <h4>Clock Out</h4>
+                    <p>Total hours and overtime calculated automatically upon clock out</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-num">4</div>
+                    <h4>Payroll</h4>
+                    <p>Admin generates payroll — all statutory deductions auto-calculated</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-num">5</div>
+                    <h4>Payslip</h4>
+                    <p>Employees download professional PDF payslips instantly</p>
+                </div>
+            </div>
+
+            <div style="height: 40px;"></div>
+            <div class="section-label">Leave Workflow</div>
+            <div style="height: 16px;"></div>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="step-num">1</div>
+                    <h4>Apply</h4>
+                    <p>Employee submits leave request with type, dates, and attachment</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-num">2</div>
+                    <h4>Review</h4>
+                    <p>Admin sees pending requests with employee details and balances</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-num">3</div>
+                    <h4>Decide</h4>
+                    <p>Approve or reject with remarks — balance updates automatically</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-number">05 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 6: Screenshots / Demo -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-dark" id="slide-6">
+        <div class="glow-circle glow-2"></div>
+        <div class="slide-inner">
+            <div class="section-label">Screenshots</div>
+            <h2 class="slide-title">System Interface</h2>
+            <div style="height: 30px;"></div>
+            <div class="screenshots-grid">
+                <div class="screenshot-placeholder">
+                    📸 Employee Dashboard<br>
+                    <span class="hint">Replace with actual screenshot</span>
+                </div>
+                <div class="screenshot-placeholder">
+                    📸 Admin Dashboard<br>
+                    <span class="hint">Replace with actual screenshot</span>
+                </div>
+                <div class="screenshot-placeholder">
+                    📸 Payroll / Payslip<br>
+                    <span class="hint">Replace with actual screenshot</span>
+                </div>
+                <div class="screenshot-placeholder">
+                    📸 Reports & Analytics<br>
+                    <span class="hint">Replace with actual screenshot</span>
+                </div>
+            </div>
+        </div>
+        <div class="slide-number">06 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 7: Malaysian Compliance -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-dark-alt" id="slide-7">
+        <div class="glow-circle glow-3"></div>
+        <div class="slide-inner">
+            <div class="section-label">Compliance</div>
+            <h2 class="slide-title">Malaysian Employment Law Ready</h2>
+            <div style="height: 30px;"></div>
+            <div class="compliance-grid">
+                <div class="compliance-card">
+                    <div class="emoji">🏦</div>
+                    <div class="name">EPF / KWSP</div>
+                    <div class="detail">Employees Provident Fund</div>
+                    <div class="rate">11% + 13%</div>
+                    <div class="detail">Employee + Employer</div>
+                </div>
+                <div class="compliance-card">
+                    <div class="emoji">🛡️</div>
+                    <div class="name">SOCSO / PERKESO</div>
+                    <div class="detail">Social Security Organisation</div>
+                    <div class="rate">Salary Band</div>
+                    <div class="detail">Per SOCSO Act 1969</div>
+                </div>
+                <div class="compliance-card">
+                    <div class="emoji">📋</div>
+                    <div class="name">EIS / SIP</div>
+                    <div class="detail">Employment Insurance</div>
+                    <div class="rate">0.2% + 0.2%</div>
+                    <div class="detail">Employee + Employer</div>
+                </div>
+                <div class="compliance-card">
+                    <div class="emoji">📊</div>
+                    <div class="name">PCB / MTD</div>
+                    <div class="detail">Monthly Tax Deduction</div>
+                    <div class="rate">Scheduled</div>
+                    <div class="detail">LHDN Tax Tables</div>
+                </div>
+            </div>
+
+            <div style="height: 30px;"></div>
+            <div class="card-grid card-grid-2">
+                <div class="card">
+                    <h3>📅 Leave Entitlements</h3>
+                    <p style="margin-top: 10px;">Per Employment Act 1955:</p>
+                    <p>• Annual Leave: 8–16 days (by service years)</p>
+                    <p>• Medical Leave: 14–22 days (by service years)</p>
+                    <p>• ClockWise defaults: 12 AL + 14 MC</p>
+                </div>
+                <div class="card">
+                    <h3>💵 Payroll Features</h3>
+                    <p style="margin-top: 10px;">Complete payslip breakdown:</p>
+                    <p>• Hourly rate × hours worked</p>
+                    <p>• Overtime at 1.5× multiplier</p>
+                    <p>• Custom allowances & deductions</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-number">07 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 8: Tech Stack & Architecture -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-dark" id="slide-8">
+        <div class="glow-circle glow-1"></div>
+        <div class="slide-inner">
+            <div class="section-label">Technology</div>
+            <h2 class="slide-title">Tech Stack & Architecture</h2>
+            <div style="height: 30px;"></div>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div class="emoji">🔴</div>
+                    <div class="name">Laravel 12</div>
+                    <div class="desc">PHP Framework</div>
+                </div>
+                <div class="tech-item">
+                    <div class="emoji">🐘</div>
+                    <div class="name">PostgreSQL</div>
+                    <div class="desc">Database (Neon)</div>
+                </div>
+                <div class="tech-item">
+                    <div class="emoji">🎨</div>
+                    <div class="name">Tailwind CSS</div>
+                    <div class="desc">UI Framework</div>
+                </div>
+                <div class="tech-item">
+                    <div class="emoji">⚡</div>
+                    <div class="name">Vite</div>
+                    <div class="desc">Build Tool</div>
+                </div>
+                <div class="tech-item">
+                    <div class="emoji">🔑</div>
+                    <div class="name">Sanctum</div>
+                    <div class="desc">API Auth</div>
+                </div>
+                <div class="tech-item">
+                    <div class="emoji">📊</div>
+                    <div class="name">Chart.js</div>
+                    <div class="desc">Data Visualization</div>
+                </div>
+                <div class="tech-item">
+                    <div class="emoji">📄</div>
+                    <div class="name">DomPDF</div>
+                    <div class="desc">PDF Generation</div>
+                </div>
+                <div class="tech-item">
+                    <div class="emoji">🐳</div>
+                    <div class="name">Docker</div>
+                    <div class="desc">Containerization</div>
+                </div>
+            </div>
+
+            <div style="height: 30px;"></div>
+            <div class="section-label">DevOps & Quality</div>
+            <div style="height: 16px;"></div>
+            <div class="security-grid">
+                <div class="security-item">
+                    <span class="check">✅</span>
+                    <span>28 automated tests (PHPUnit)</span>
+                </div>
+                <div class="security-item">
+                    <span class="check">✅</span>
+                    <span>CI/CD via GitHub Actions</span>
+                </div>
+                <div class="security-item">
+                    <span class="check">✅</span>
+                    <span>19 REST API endpoints</span>
+                </div>
+                <div class="security-item">
+                    <span class="check">✅</span>
+                    <span>Docker deployment on Render</span>
+                </div>
+                <div class="security-item">
+                    <span class="check">✅</span>
+                    <span>Database-agnostic (MySQL + PostgreSQL)</span>
+                </div>
+                <div class="security-item">
+                    <span class="check">✅</span>
+                    <span>Responsive design (mobile-ready)</span>
+                </div>
+            </div>
+        </div>
+        <div class="slide-number">08 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 9: Security -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-dark-alt" id="slide-9">
+        <div class="glow-circle glow-2"></div>
+        <div class="slide-inner">
+            <div class="section-label">Security</div>
+            <h2 class="slide-title">Enterprise-Grade Security</h2>
+            <div style="height: 30px;"></div>
+            <div class="card-grid card-grid-2">
+                <div class="card">
+                    <div class="card-icon purple">🔐</div>
+                    <h3>Authentication & Access</h3>
+                    <p>• Role-based access control (Admin / Employee)<br>
+                       • Laravel Sanctum token authentication<br>
+                       • Password hashing with bcrypt<br>
+                       • Rate-limited login (5 attempts/min)<br>
+                       • Password reset via email</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon cyan">🛡️</div>
+                    <h3>Data Protection</h3>
+                    <p>• HTTPS/SSL encryption<br>
+                       • CSRF token protection<br>
+                       • Session encryption enabled<br>
+                       • Security headers middleware<br>
+                       • SQL injection prevention (Eloquent ORM)</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon green">📋</div>
+                    <h3>Audit & Monitoring</h3>
+                    <p>• Full audit log for all actions<br>
+                       • Login/logout tracking<br>
+                       • CRUD operation logging<br>
+                       • IP address recording<br>
+                       • User agent tracking</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon amber">🌐</div>
+                    <h3>Network Security</h3>
+                    <p>• Office IP detection middleware<br>
+                       • Office vs remote classification<br>
+                       • Admin-configurable office IP<br>
+                       • Location-aware attendance<br>
+                       • API token-based access</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-number">09 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 10: Live Demo & CTA -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="slide bg-gradient-cta" id="slide-10">
+        <div class="glow-circle glow-1"></div>
+        <div class="glow-circle glow-2"></div>
+        <div class="slide-inner" style="text-align: center;">
+            <div class="section-label" style="color: rgba(255,255,255,0.6);">Try It Now</div>
+            <h2 class="slide-title" style="font-size: 52px;">See ClockWise in Action</h2>
+            <p style="font-size: 18px; color: rgba(255,255,255,0.7); max-width: 500px; margin: 0 auto 30px;">
+                The system is live and ready to explore. Log in with the credentials below.
+            </p>
+
+            <div class="cta-box" style="max-width: 700px; margin: 0 auto;">
+                <div style="text-align: left;">
+                    <div class="cta-url">https://clockwise-jlx3.onrender.com</div>
+                    <div class="cta-creds" style="margin-top: 12px;">
+                        <strong style="color: #E2E8F0;">Admin:</strong> admin@clockwise.my / password123<br>
+                        <strong style="color: #E2E8F0;">Employee:</strong> ali@clockwise.my / password123
+                    </div>
+                </div>
+                <div class="qr-placeholder">
+                    QR Code<br><small>for live URL</small>
+                </div>
+            </div>
+
+            <div style="margin-top: 50px;">
+                <table class="styled-table" style="max-width: 600px; margin: 0 auto;">
+                    <tr>
+                        <td>📂</td>
+                        <td><strong>Source Code</strong></td>
+                        <td><span class="badge badge-purple">github.com/Syafiq276/ClockWise</span></td>
+                    </tr>
+                    <tr>
+                        <td>📖</td>
+                        <td><strong>Documentation</strong></td>
+                        <td><span class="badge badge-green">Full README on GitHub</span></td>
+                    </tr>
+                    <tr>
+                        <td>🔌</td>
+                        <td><strong>API Base URL</strong></td>
+                        <td><span class="badge badge-cyan">/api (19 endpoints)</span></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="margin-top: 50px; color: rgba(255,255,255,0.4); font-size: 14px;">
+                Built by <strong style="color: rgba(255,255,255,0.7);">Syafiq</strong> &nbsp;•&nbsp; 
+                Laravel 12 &nbsp;•&nbsp; PostgreSQL &nbsp;•&nbsp; Tailwind CSS &nbsp;•&nbsp; Docker
+            </div>
+        </div>
+        <div class="slide-number">10 / 10</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- JavaScript: Navigation -->
+    <!-- ═══════════════════════════════════════════ -->
+    <script>
+        const totalSlides = 10;
+        let currentSlide = 1;
+
+        // Build nav dots
+        const dotsContainer = document.getElementById('navDots');
+        for (let i = 1; i <= totalSlides; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'nav-dot' + (i === 1 ? ' active' : '');
+            dot.dataset.slide = i;
+            dot.addEventListener('click', () => goToSlide(i));
+            dotsContainer.appendChild(dot);
+        }
+
+        function goToSlide(n) {
+            const el = document.getElementById('slide-' + n);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Update active dot on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const num = parseInt(entry.target.id.replace('slide-', ''));
+                    currentSlide = num;
+                    document.querySelectorAll('.nav-dot').forEach((d, i) => {
+                        d.classList.toggle('active', i + 1 === num);
+                    });
+                }
+            });
+        }, { threshold: 0.5 });
+
+        for (let i = 1; i <= totalSlides; i++) {
+            observer.observe(document.getElementById('slide-' + i));
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+                e.preventDefault();
+                goToSlide(Math.min(currentSlide + 1, totalSlides));
+            } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+                e.preventDefault();
+                goToSlide(Math.max(currentSlide - 1, 1));
+            } else if (e.key === 'f' || e.key === 'F') {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        // Hide nav hint after 5 seconds
+        setTimeout(() => {
+            document.getElementById('navHint').classList.add('hidden');
+        }, 5000);
+    </script>
+
+</body>
+</html>
