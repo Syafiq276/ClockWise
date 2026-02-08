@@ -18,6 +18,10 @@ ENV_FILE=/var/www/html/.env
 if [ -n "$DATABASE_URL" ]; then
     [ -z "$DB_CONNECTION" ] && export DB_CONNECTION=pgsql
     [ -z "$DB_PORT" ] && export DB_PORT=5432
+    # Convert Neon pooler URL to direct connection for migrations
+    # Pooler (-pooler) uses PgBouncer which breaks DDL transactions
+    DIRECT_URL=$(echo "$DATABASE_URL" | sed 's/-pooler\./\./')
+    export DATABASE_URL="$DIRECT_URL"
 fi
 for var in APP_NAME APP_ENV APP_DEBUG APP_URL APP_KEY \
            DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD DATABASE_URL \
