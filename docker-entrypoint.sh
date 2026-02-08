@@ -14,9 +14,10 @@ fi
 echo "⚙️  Syncing environment variables..."
 ENV_FILE=/var/www/html/.env
 
-# Auto-detect DB_CONNECTION from DATABASE_URL if not set
-if [ -z "$DB_CONNECTION" ] && [ -n "$DATABASE_URL" ]; then
-    export DB_CONNECTION=pgsql
+# Auto-detect DB settings from DATABASE_URL if not set
+if [ -n "$DATABASE_URL" ]; then
+    [ -z "$DB_CONNECTION" ] && export DB_CONNECTION=pgsql
+    [ -z "$DB_PORT" ] && export DB_PORT=5432
 fi
 for var in APP_NAME APP_ENV APP_DEBUG APP_URL APP_KEY \
            DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD DATABASE_URL \
