@@ -10,6 +10,7 @@ vendor
 # Environment
 .env
 .env.*
+!.env.example
 
 # Build & Metadata
 Dockerfile*
