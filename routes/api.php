@@ -45,7 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Leave
     Route::get('leave/balances', [LeaveController::class, 'balances']);
-    Route::apiResource('leave', LeaveController::class)->except(['update']);
+    Route::apiResource('leave', LeaveController::class)->except(['update'])->names('api.leave');
     // DELETE /api/leave/{id} — cancel pending request
 
     // Payroll / Payslips
