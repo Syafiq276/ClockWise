@@ -3,10 +3,19 @@ set -e
 
 echo "🚀 ClockWise - Starting deployment..."
 
+# Ensure .env exists
+if [ ! -f /var/www/html/.env ]; then
+    echo "⚙️  Creating .env file..."
+    cp /var/www/html/.env.example /var/www/html/.env
+fi
+
 # Generate app key if not set
 if [ -z "$APP_KEY" ]; then
     echo "⚙️  Generating application key..."
     php artisan key:generate --force
+else
+    # Write the Render-provided APP_KEY into .env so config:cache picks it up
+    sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" /var/www/html/.env
 fi
 
 # Cache configuration for performance

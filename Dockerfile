@@ -24,6 +24,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
 # Copy the rest of the application
 COPY . .
 
+# Create .env from example (runtime env vars override these)
+RUN cp .env.example .env
+
 # Run post-install scripts after full copy
 RUN composer dump-autoload --optimize
 
