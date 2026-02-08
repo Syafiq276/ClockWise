@@ -89,6 +89,7 @@ Route::middleware(['auth', CheckNetworkContext::class])->group(function () {
 
         // Reports & analytics
         Route::get('reports', [AdminController::class, 'reports'])->name('admin.reports');
+        Route::get('reports/export', [AdminController::class, 'exportReports'])->name('admin.reports.export');
 
         // Audit logs
         Route::get('audit-logs', [AdminController::class, 'auditLogs'])->name('admin.audit-logs');

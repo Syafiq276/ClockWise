@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\AuditLog;
 use App\Models\LeaveRequest;
+use App\Models\Payroll;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
@@ -366,16 +367,24 @@ class AdminController extends Controller
      */
     public function reports(Request $request)
     {
-        // Get date range (default: current month)
-        $startDate = $request->filled('start_date') 
-            ? Carbon::parse($request->start_date) 
-            : now()->startOfMonth();
-        $endDate = $request->filled('end_date') 
-            ? Carbon::parse($request->end_date) 
-            : now()->endOfMonth();
+        // ── Period presets ──────────────────────────────────────
+        $preset = $request->input('preset', 'this_month');
 
-        // Daily attendance data for the selected period
-        $dailyAttendance = Attendance::selectRaw('date, 
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = Carbon::parse($request->start_date)->startOfDay();
+            $endDate   = Carbon::parse($request->end_date)->endOfDay();
+            $preset    = 'custom';
+        } else {
+            [$startDate, $endDate] = $this->resolvePresetDates($preset);
+        }
+
+        // Previous period for comparison
+        $periodLength = $startDate->diffInDays($endDate) + 1;
+        $prevEnd   = $startDate->copy()->subDay()->endOfDay();
+        $prevStart = $prevEnd->copy()->subDays($periodLength - 1)->startOfDay();
+
+        // ── 1. Daily attendance ────────────────────────────────
+        $dailyAttendance = Attendance::selectRaw('date,
                 COUNT(*) as total,
                 SUM(CASE WHEN status = "ontime" THEN 1 ELSE 0 END) as ontime,
                 SUM(CASE WHEN status = "late" THEN 1 ELSE 0 END) as late')
@@ -384,14 +393,14 @@ class AdminController extends Controller
             ->orderBy('date')
             ->get();
 
-        // Location breakdown
+        // ── 2. Location breakdown ──────────────────────────────
         $locationData = Attendance::selectRaw('location_type, COUNT(*) as count')
             ->whereBetween('date', [$startDate, $endDate])
             ->groupBy('location_type')
             ->pluck('count', 'location_type')
             ->toArray();
 
-        // Leave type breakdown
+        // ── 3. Leave type breakdown ────────────────────────────
         $leaveData = LeaveRequest::selectRaw('type, COUNT(*) as count')
             ->where('status', 'approved')
             ->whereBetween('start_date', [$startDate, $endDate])
@@ -399,7 +408,7 @@ class AdminController extends Controller
             ->pluck('count', 'type')
             ->toArray();
 
-        // Monthly hours per employee (top 10)
+        // ── 4. Employee hours (top 10) ─────────────────────────
         $employeeHours = User::where('role', 'employee')
             ->withSum(['attendances as total_minutes' => function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('date', [$startDate, $endDate])
@@ -408,54 +417,289 @@ class AdminController extends Controller
             ->orderByDesc('total_minutes')
             ->limit(10)
             ->get()
-            ->map(function ($emp) {
-                return [
-                    'name' => $emp->name,
-                    'hours' => round(($emp->total_minutes ?? 0) / 60, 1),
-                ];
-            });
+            ->map(fn ($emp) => [
+                'name'  => $emp->name,
+                'hours' => round(($emp->total_minutes ?? 0) / 60, 1),
+            ]);
 
-        // Weekly trend (last 4 weeks)
+        // ── 5. Weekly trend (last 4 weeks) ─────────────────────
         $weeklyTrend = collect();
         for ($i = 3; $i >= 0; $i--) {
             $weekStart = now()->subWeeks($i)->startOfWeek();
-            $weekEnd = now()->subWeeks($i)->endOfWeek();
-            
+            $weekEnd   = now()->subWeeks($i)->endOfWeek();
+
             $weekData = Attendance::whereBetween('date', [$weekStart, $weekEnd])
-                ->selectRaw('COUNT(*) as total, 
+                ->selectRaw('COUNT(*) as total,
                     SUM(CASE WHEN status = "ontime" THEN 1 ELSE 0 END) as ontime')
                 ->first();
 
             $weeklyTrend->push([
-                'week' => $weekStart->format('d M'),
-                'total' => $weekData->total ?? 0,
+                'week'   => $weekStart->format('d M'),
+                'total'  => $weekData->total ?? 0,
                 'ontime' => $weekData->ontime ?? 0,
             ]);
         }
 
-        // Summary stats
-        $stats = [
-            'total_attendance' => Attendance::whereBetween('date', [$startDate, $endDate])->count(),
-            'unique_employees' => Attendance::whereBetween('date', [$startDate, $endDate])->distinct('user_id')->count('user_id'),
-            'avg_hours' => round(Attendance::whereBetween('date', [$startDate, $endDate])
-                ->whereNotNull('clock_out')
-                ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, clock_in, clock_out)) as avg')
-                ->value('avg') / 60, 1) ?: 0,
-            'leave_days' => LeaveRequest::where('status', 'approved')
+        // ── 6. Payroll cost trend (monthly) ────────────────────
+        $payrollTrend = Payroll::selectRaw('
+                DATE_FORMAT(period_start, "%Y-%m") as month,
+                SUM(gross_pay) as gross,
+                SUM(net_pay) as net,
+                SUM(total_statutory) as statutory,
+                SUM(overtime_pay) as overtime')
+            ->whereIn('status', ['approved', 'paid'])
+            ->whereBetween('period_start', [$startDate, $endDate])
+            ->groupByRaw('DATE_FORMAT(period_start, "%Y-%m")')
+            ->orderBy('month')
+            ->get();
+
+        // ── 7. Employee performance scorecards ─────────────────
+        $employees = User::where('role', 'employee')->get();
+        $totalWorkDays = max($startDate->diffInWeekdays($endDate), 1);
+
+        $performance = $employees->map(function (User $emp) use ($startDate, $endDate, $totalWorkDays) {
+            $attendances = Attendance::where('user_id', $emp->id)
+                ->whereBetween('date', [$startDate, $endDate])
+                ->get();
+
+            $totalDays   = $attendances->count();
+            $ontimeDays  = $attendances->where('status', 'ontime')->count();
+            $lateDays    = $attendances->where('status', 'late')->count();
+            $totalMins   = $attendances->filter(fn ($a) => $a->clock_in && $a->clock_out)
+                ->sum(fn ($a) => Carbon::parse($a->clock_in)->diffInMinutes(Carbon::parse($a->clock_out)));
+            $overtimeMins = max($totalMins - ($totalDays * 480), 0); // 8h = 480min baseline
+
+            $leaveDays = LeaveRequest::where('user_id', $emp->id)
+                ->where('status', 'approved')
                 ->whereBetween('start_date', [$startDate, $endDate])
-                ->sum('days'),
+                ->sum('days');
+
+            return [
+                'id'               => $emp->id,
+                'name'             => $emp->name,
+                'position'         => $emp->position ?? '—',
+                'attendance_rate'  => round(($totalDays / $totalWorkDays) * 100, 1),
+                'punctuality_rate' => $totalDays > 0 ? round(($ontimeDays / $totalDays) * 100, 1) : 0,
+                'total_hours'      => round($totalMins / 60, 1),
+                'overtime_hours'   => round($overtimeMins / 60, 1),
+                'late_days'        => $lateDays,
+                'leave_days'       => $leaveDays,
+            ];
+        })->sortByDesc('attendance_rate')->values();
+
+        // ── 8. Overtime trend (daily) ──────────────────────────
+        $overtimeTrend = Attendance::selectRaw('date,
+                SUM(GREATEST(TIMESTAMPDIFF(MINUTE, clock_in, clock_out) - 480, 0)) as ot_minutes,
+                SUM(CASE WHEN TIMESTAMPDIFF(MINUTE, clock_in, clock_out) > 480 THEN 1 ELSE 0 END) as ot_count')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->whereNotNull('clock_out')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->map(fn ($row) => [
+                'date'     => Carbon::parse($row->date)->format('d M'),
+                'ot_hours' => round(($row->ot_minutes ?? 0) / 60, 1),
+                'ot_count' => $row->ot_count ?? 0,
+            ]);
+
+        // ── 9. Monthly leave utilisation trend ─────────────────
+        $leaveTrend = LeaveRequest::selectRaw('
+                DATE_FORMAT(start_date, "%Y-%m") as month,
+                SUM(days) as total_days,
+                SUM(CASE WHEN type = "annual" THEN days ELSE 0 END) as annual,
+                SUM(CASE WHEN type = "mc" THEN days ELSE 0 END) as medical,
+                SUM(CASE WHEN type = "emergency" THEN days ELSE 0 END) as emergency')
+            ->where('status', 'approved')
+            ->whereBetween('start_date', [$startDate, $endDate])
+            ->groupByRaw('DATE_FORMAT(start_date, "%Y-%m")')
+            ->orderBy('month')
+            ->get();
+
+        // ── 10. Summary stats with period comparison ───────────
+        $currentTotal = Attendance::whereBetween('date', [$startDate, $endDate])->count();
+        $prevTotal    = Attendance::whereBetween('date', [$prevStart, $prevEnd])->count();
+
+        $currentOntime = Attendance::whereBetween('date', [$startDate, $endDate])->where('status', 'ontime')->count();
+        $prevOntime    = Attendance::whereBetween('date', [$prevStart, $prevEnd])->where('status', 'ontime')->count();
+
+        $avgHoursRaw = Attendance::whereBetween('date', [$startDate, $endDate])
+            ->whereNotNull('clock_out')
+            ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, clock_in, clock_out)) as avg')
+            ->value('avg');
+        $currentAvgHours = round(($avgHoursRaw ?? 0) / 60, 1);
+
+        $prevAvgRaw = Attendance::whereBetween('date', [$prevStart, $prevEnd])
+            ->whereNotNull('clock_out')
+            ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, clock_in, clock_out)) as avg')
+            ->value('avg');
+        $prevAvgHours = round(($prevAvgRaw ?? 0) / 60, 1);
+
+        $currentLeave = LeaveRequest::where('status', 'approved')
+            ->whereBetween('start_date', [$startDate, $endDate])->sum('days');
+        $prevLeave = LeaveRequest::where('status', 'approved')
+            ->whereBetween('start_date', [$prevStart, $prevEnd])->sum('days');
+
+        $currentGross = Payroll::whereIn('status', ['approved', 'paid'])
+            ->whereBetween('period_start', [$startDate, $endDate])->sum('gross_pay');
+        $prevGross = Payroll::whereIn('status', ['approved', 'paid'])
+            ->whereBetween('period_start', [$prevStart, $prevEnd])->sum('gross_pay');
+
+        $stats = [
+            'total_attendance'   => $currentTotal,
+            'attendance_change'  => $prevTotal > 0 ? round((($currentTotal - $prevTotal) / $prevTotal) * 100, 1) : 0,
+            'unique_employees'   => Attendance::whereBetween('date', [$startDate, $endDate])->distinct('user_id')->count('user_id'),
+            'avg_hours'          => $currentAvgHours,
+            'avg_hours_change'   => $prevAvgHours > 0 ? round($currentAvgHours - $prevAvgHours, 1) : 0,
+            'punctuality_rate'   => $currentTotal > 0 ? round(($currentOntime / $currentTotal) * 100, 1) : 0,
+            'prev_punctuality'   => $prevTotal > 0 ? round(($prevOntime / $prevTotal) * 100, 1) : 0,
+            'leave_days'         => $currentLeave,
+            'leave_change'       => $prevLeave > 0 ? round((($currentLeave - $prevLeave) / $prevLeave) * 100, 1) : 0,
+            'total_payroll'      => $currentGross,
+            'payroll_change'     => $prevGross > 0 ? round((($currentGross - $prevGross) / $prevGross) * 100, 1) : 0,
         ];
 
         return view('admin.reports', compact(
-            'dailyAttendance', 
-            'locationData', 
-            'leaveData', 
-            'employeeHours', 
+            'dailyAttendance',
+            'locationData',
+            'leaveData',
+            'employeeHours',
             'weeklyTrend',
+            'payrollTrend',
+            'performance',
+            'overtimeTrend',
+            'leaveTrend',
             'stats',
             'startDate',
-            'endDate'
+            'endDate',
+            'preset'
         ));
+    }
+
+    /**
+     * Resolve preset date ranges
+     */
+    private function resolvePresetDates(string $preset): array
+    {
+        return match ($preset) {
+            'this_week'    => [now()->startOfWeek(), now()->endOfWeek()],
+            'last_week'    => [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()],
+            'this_month'   => [now()->startOfMonth(), now()->endOfMonth()],
+            'last_month'   => [now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth()],
+            'this_quarter' => [now()->firstOfQuarter(), now()->lastOfQuarter()->endOfDay()],
+            'last_quarter' => [now()->subQuarter()->firstOfQuarter(), now()->subQuarter()->lastOfQuarter()->endOfDay()],
+            'q1'           => [Carbon::create(now()->year, 1, 1), Carbon::create(now()->year, 3, 31)->endOfDay()],
+            'q2'           => [Carbon::create(now()->year, 4, 1), Carbon::create(now()->year, 6, 30)->endOfDay()],
+            'q3'           => [Carbon::create(now()->year, 7, 1), Carbon::create(now()->year, 9, 30)->endOfDay()],
+            'q4'           => [Carbon::create(now()->year, 10, 1), Carbon::create(now()->year, 12, 31)->endOfDay()],
+            'this_year'    => [now()->startOfYear(), now()->endOfYear()],
+            'last_year'    => [now()->subYear()->startOfYear(), now()->subYear()->endOfYear()],
+            default        => [now()->startOfMonth(), now()->endOfMonth()],
+        };
+    }
+
+    /**
+     * Export reports data as CSV
+     */
+    public function exportReports(Request $request)
+    {
+        $preset = $request->input('preset', 'this_month');
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = Carbon::parse($request->start_date)->startOfDay();
+            $endDate   = Carbon::parse($request->end_date)->endOfDay();
+        } else {
+            [$startDate, $endDate] = $this->resolvePresetDates($preset);
+        }
+
+        $type = $request->input('type', 'attendance');
+        $filename = "clockwise_{$type}_{$startDate->format('Ymd')}_{$endDate->format('Ymd')}.csv";
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($type, $startDate, $endDate) {
+            $file = fopen('php://output', 'w');
+
+            switch ($type) {
+                case 'attendance':
+                    fputcsv($file, ['Date', 'Employee', 'Clock In', 'Clock Out', 'Status', 'Location', 'Hours']);
+                    Attendance::with('user')
+                        ->whereBetween('date', [$startDate, $endDate])
+                        ->orderBy('date')
+                        ->chunk(200, function ($rows) use ($file) {
+                            foreach ($rows as $row) {
+                                $hours = ($row->clock_in && $row->clock_out)
+                                    ? round(Carbon::parse($row->clock_in)->diffInMinutes(Carbon::parse($row->clock_out)) / 60, 1)
+                                    : 0;
+                                fputcsv($file, [
+                                    $row->date?->toDateString(),
+                                    $row->user?->name ?? 'N/A',
+                                    $row->clock_in,
+                                    $row->clock_out ?? '—',
+                                    ucfirst($row->status),
+                                    ucfirst($row->location_type),
+                                    $hours,
+                                ]);
+                            }
+                        });
+                    break;
+
+                case 'payroll':
+                    fputcsv($file, ['Month', 'Employee', 'Gross Pay', 'EPF', 'SOCSO', 'EIS', 'PCB', 'Total Statutory', 'Net Pay', 'Status']);
+                    Payroll::with('user')
+                        ->whereBetween('period_start', [$startDate, $endDate])
+                        ->orderBy('period_start')
+                        ->chunk(200, function ($rows) use ($file) {
+                            foreach ($rows as $row) {
+                                fputcsv($file, [
+                                    $row->month_year,
+                                    $row->user?->name ?? 'N/A',
+                                    number_format($row->gross_pay, 2),
+                                    number_format($row->epf_employee, 2),
+                                    number_format($row->socso_employee, 2),
+                                    number_format($row->eis_employee, 2),
+                                    number_format($row->pcb, 2),
+                                    number_format($row->total_statutory, 2),
+                                    number_format($row->net_pay, 2),
+                                    ucfirst($row->status),
+                                ]);
+                            }
+                        });
+                    break;
+
+                case 'performance':
+                    fputcsv($file, ['Employee', 'Position', 'Attendance Rate (%)', 'Punctuality (%)', 'Total Hours', 'Overtime Hours', 'Late Days', 'Leave Days']);
+                    $totalWorkDays = max($startDate->diffInWeekdays($endDate), 1);
+
+                    User::where('role', 'employee')->get()->each(function ($emp) use ($file, $startDate, $endDate, $totalWorkDays) {
+                        $att = Attendance::where('user_id', $emp->id)->whereBetween('date', [$startDate, $endDate])->get();
+                        $totalDays  = $att->count();
+                        $ontimeDays = $att->where('status', 'ontime')->count();
+                        $totalMins  = $att->filter(fn ($a) => $a->clock_in && $a->clock_out)
+                            ->sum(fn ($a) => Carbon::parse($a->clock_in)->diffInMinutes(Carbon::parse($a->clock_out)));
+                        $otMins     = max($totalMins - ($totalDays * 480), 0);
+                        $leaveDays  = LeaveRequest::where('user_id', $emp->id)->where('status', 'approved')
+                            ->whereBetween('start_date', [$startDate, $endDate])->sum('days');
+
+                        fputcsv($file, [
+                            $emp->name,
+                            $emp->position ?? '—',
+                            round(($totalDays / $totalWorkDays) * 100, 1),
+                            $totalDays > 0 ? round(($ontimeDays / $totalDays) * 100, 1) : 0,
+                            round($totalMins / 60, 1),
+                            round($otMins / 60, 1),
+                            $att->where('status', 'late')->count(),
+                            $leaveDays,
+                        ]);
+                    });
+                    break;
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**
