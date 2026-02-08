@@ -53,9 +53,10 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available
 RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
     && sed -i 's/:80/:${PORT}/g' /etc/apache2/sites-available/000-default.conf
 
-# Copy startup script
+# Copy startup script and fix line endings (Windows CRLF -> Unix LF)
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
+    && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENV APP_ENV=production
 ENV PORT=10000
