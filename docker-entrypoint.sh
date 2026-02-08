@@ -13,6 +13,11 @@ fi
 # so that config:cache picks up Render's env vars (not .env.example defaults)
 echo "⚙️  Syncing environment variables..."
 ENV_FILE=/var/www/html/.env
+
+# Auto-detect DB_CONNECTION from DATABASE_URL if not set
+if [ -z "$DB_CONNECTION" ] && [ -n "$DATABASE_URL" ]; then
+    export DB_CONNECTION=pgsql
+fi
 for var in APP_NAME APP_ENV APP_DEBUG APP_URL APP_KEY \
            DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD DATABASE_URL \
            LOG_CHANNEL SESSION_DRIVER CACHE_STORE QUEUE_CONNECTION \
