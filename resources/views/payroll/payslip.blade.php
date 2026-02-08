@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-4xl mx-auto px-4 py-8">
     <!-- Header (hidden when printing) -->
-    <div class="flex justify-between items-center mb-6 print:hidden">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 print:hidden">
         <div>
             <h1 class="text-2xl font-bold text-gray-800">Payslip</h1>
             <p class="text-gray-600">{{ \Carbon\Carbon::parse($payroll->month_year . '-01')->format('F Y') }}</p>
@@ -29,8 +29,8 @@
     <!-- Payslip Card (Printable) -->
     <div id="payslip" class="bg-white rounded-xl shadow-md overflow-hidden print:shadow-none print:rounded-none">
         <!-- Company Header -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 print:bg-blue-600">
-            <div class="flex justify-between items-start">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sm:p-6 print:bg-blue-600">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                 <div>
                     <h2 class="text-2xl font-bold">ClockWise</h2>
                     <p class="text-blue-100 text-sm">SLIP GAJI / PAYSLIP</p>
@@ -43,15 +43,15 @@
         </div>
 
         <!-- Employee & Period Info -->
-        <div class="p-6 border-b bg-gray-50 print:bg-white">
-            <div class="grid grid-cols-2 gap-6">
+        <div class="p-4 sm:p-6 border-b bg-gray-50 print:bg-white">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                     <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Maklumat Pekerja / Employee Details</h3>
                     <p class="font-semibold text-gray-800 text-lg">{{ $payroll->user->name ?? 'N/A' }}</p>
                     <p class="text-sm text-gray-600">{{ $payroll->user->email ?? '-' }}</p>
                     <p class="text-sm text-gray-600">{{ $payroll->user->position ?? 'Staff' }}</p>
                 </div>
-                <div class="text-right">
+                <div class="sm:text-right">
                     <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Tempoh Gaji / Pay Period</h3>
                     <p class="font-semibold text-gray-800 text-lg">{{ \Carbon\Carbon::parse($payroll->month_year . '-01')->format('F Y') }}</p>
                     @if($payroll->period_start && $payroll->period_end)
@@ -66,9 +66,9 @@
         </div>
 
         <!-- Work Summary -->
-        <div class="p-6 border-b">
+        <div class="p-4 sm:p-6 border-b">
             <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">Ringkasan Kerja / Work Summary</h3>
-            <div class="grid grid-cols-4 gap-4 text-center">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
                 <div class="bg-blue-50 rounded-lg p-3 print:border print:border-gray-300">
                     <p class="text-xl font-bold text-blue-600">{{ $payroll->days_worked }}</p>
                     <p class="text-xs text-gray-500">Hari / Days</p>
@@ -89,8 +89,8 @@
         </div>
 
         <!-- Earnings & Deductions Table -->
-        <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="p-4 sm:p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <!-- Left: Earnings -->
                 <div>
                     <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 text-green-600">Pendapatan / Earnings</h3>

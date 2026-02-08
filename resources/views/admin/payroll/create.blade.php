@@ -81,7 +81,7 @@
                 </h2>
                 
                 <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                         <div>
                             <p class="text-sm text-gray-500">Employee</p>
                             <p class="font-semibold text-gray-800">{{ $calculation['employee_name'] }}</p>
@@ -146,7 +146,7 @@
                     Statutory Deductions (Malaysian)
                 </h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <!-- EPF/KWSP -->
                     <div class="bg-blue-50 rounded-lg p-4">
                         <div class="flex items-center mb-3">
@@ -221,7 +221,7 @@
 
                 <!-- PCB/MTD -->
                 <div class="mt-4 p-4 bg-amber-50 rounded-lg">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div class="flex items-center">
                             <div class="w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2">PCB</div>
                             <div>

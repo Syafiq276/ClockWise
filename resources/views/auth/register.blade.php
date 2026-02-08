@@ -3,10 +3,10 @@
 @section('title', 'Sign Up - ClockWise')
 
 @section('content')
-<div class="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold">Create your account</h1>
-        <p class="text-sm text-slate-500">It only takes a minute.</p>
+<div class="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 auth-card">
+    <div class="mb-6 text-center">
+        <h1 class="text-2xl font-bold">🕐 ClockWise</h1>
+        <p class="text-sm text-slate-500 mt-1">Create your account</p>
     </div>
 
     @if ($errors->any())
@@ -53,8 +53,11 @@
             </div>
         </div>
 
-        <button type="submit" class="w-full rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800">
-            Create account
+        <button type="submit" class="btn-primary w-full rounded-lg px-4 py-2.5 font-medium relative">
+            <span class="btn-text">Create account</span>
+            <span class="btn-loader" aria-hidden="true">
+                <span class="spinner"></span>
+            </span>
         </button>
     </form>
 

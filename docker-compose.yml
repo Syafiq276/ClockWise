@@ -12,6 +12,9 @@ services:
       - ./:/var/www
     networks:
       - clockwise-network
+    environment:
+      PORT: 80
+      APP_ENV: local
 
   # 2. The Web Server (Nginx)
   web:

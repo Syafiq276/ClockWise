@@ -14,7 +14,7 @@
             color: white;
             position: relative;
             overflow: hidden;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-1px);
@@ -24,32 +24,65 @@
             transform: translateY(0);
         }
         .btn-primary:disabled {
-            opacity: 0.7;
             cursor: not-allowed;
         }
+        .btn-primary.loading {
+            pointer-events: none;
+        }
         .btn-primary.loading .btn-text {
-            visibility: hidden;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: all 0.2s ease;
         }
         .btn-primary.loading .btn-loader {
-            display: block !important;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
         }
 
         /* Spinner */
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        }
         .btn-loader {
-            display: none;
             position: absolute;
             left: 50%;
             top: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%) scale(0.5);
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-loader .spinner {
+            width: 22px;
+            height: 22px;
+            border: 2.5px solid rgba(255,255,255,0.25);
             border-top-color: white;
             border-radius: 50%;
-            animation: spin 0.6s linear infinite;
+            animation: spin 0.65s linear infinite;
+        }
+        .btn-loader .spinner-dot {
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse-ring 1.2s ease infinite;
+        }
+
+        /* Button text transition */
+        .btn-text {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
         }
 
         /* Input Focus */

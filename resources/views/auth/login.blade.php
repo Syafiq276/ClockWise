@@ -59,7 +59,9 @@
 
         <button type="submit" class="btn-primary w-full rounded-lg px-4 py-2.5 font-medium relative">
             <span class="btn-text">Sign in</span>
-            <span class="btn-loader"></span>
+            <span class="btn-loader" aria-hidden="true">
+                <span class="spinner"></span>
+            </span>
         </button>
     </form>
 

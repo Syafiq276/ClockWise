@@ -12,7 +12,10 @@ class Attendance extends Model
         'date',
         'clock_in',
         'clock_out',
+        'total_hours',
+        'overtime_hours',
         'status',
+        'notes',
         'ip_address',
         'location_type',
     ];
@@ -21,6 +24,8 @@ class Attendance extends Model
         'date' => 'date',
         'clock_in' => 'datetime:H:i:s',
         'clock_out' => 'datetime:H:i:s',
+        'total_hours' => 'decimal:2',
+        'overtime_hours' => 'decimal:2',
     ];
 
     public function user(): BelongsTo

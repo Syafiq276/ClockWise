@@ -3,21 +3,21 @@
 @section('title', 'Admin Dashboard - ClockWise')
 
 @section('content')
-<div class="mx-auto max-w-7xl px-6 py-10 space-y-8">
-    <div class="flex items-center justify-between">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-8">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h1 class="text-2xl font-bold">Admin Dashboard</h1>
-            <p class="text-sm text-slate-500">Office IP: {{ $office_ip ?? 'Not set' }}</p>
+            <p class="text-sm text-slate-500 break-all">Office IP: {{ $office_ip ?? 'Not set' }}</p>
         </div>
         <form action="{{ route('admin.set-ip') }}" method="POST">
             @csrf
-            <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800">
+            <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800 w-full sm:w-auto">
                 🔄 Set Office IP to Current
             </button>
         </form>
     </div>
 
-    <section class="grid gap-4 md:grid-cols-5">
+    <section class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
         <div class="rounded-lg bg-white p-4 shadow-sm">
             <p class="text-xs uppercase text-slate-500">Office logs</p>
             <p class="text-2xl font-semibold">{{ $office_count }}</p>

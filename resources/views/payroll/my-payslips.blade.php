@@ -50,7 +50,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Total Hours (YTD)</p>
-                        <p class="text-xl font-bold text-purple-600">{{ number_format($totalHours, 1) }}h</p>
+                        <p class="text-xl font-bold text-purple-600">{{ number_format($totalHours ?? 0, 1) }}h</p>
                     </div>
                 </div>
             </div>
@@ -62,7 +62,7 @@
                 <div class="divide-y divide-gray-200">
                     @foreach($payslips as $payslip)
                         <div class="block p-4 hover:bg-gray-50 transition table-row-hover">
-                            <div class="flex items-center justify-between">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                 <a href="{{ route('payslips.show', $payslip) }}" class="flex items-center flex-1">
                                     <div
                                         class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white">
@@ -82,8 +82,8 @@
                                         </p>
                                     </div>
                                 </a>
-                                <div class="flex items-center gap-4">
-                                    <div class="text-right">
+                                <div class="flex items-center gap-4 pl-16 sm:pl-0">
+                                    <div class="sm:text-right">
                                         <p class="text-lg font-bold text-gray-800">RM {{ number_format($payslip->net_pay, 2) }}</p>
                                         <span
                                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $payslip->getStatusBadgeClass() }}">

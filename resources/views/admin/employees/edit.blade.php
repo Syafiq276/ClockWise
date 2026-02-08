@@ -3,7 +3,7 @@
 @section('title', 'Edit Employee')
 
 @section('content')
-<div class="max-w-2xl mx-auto">
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
     <!-- Header -->
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Edit Employee</h1>
@@ -162,7 +162,7 @@
             </div>
 
             <!-- Actions -->
-            <div class="flex justify-between items-center pt-4">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-4">
                 <p class="text-sm text-gray-500">
                     Joined: {{ $employee->created_at->format('d M Y') }}
                 </p>

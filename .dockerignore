@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+vendor
+
+# Environment
+.env
+.env.*
+
+# Build & Metadata
+Dockerfile*
+docker-compose*
+fly.toml
+README.md
+*.md
+LICENSE
+
+# IDE/System
+.idea
+.vscode
+.vscode/*
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+
+# Laravel Storage (except what's needed)
+storage/
+!storage/app/public/
+!storage/framework/views/
+public/storage
+public/hot
+public/build
+
+# Tests
+tests
+phpunit.xml
+

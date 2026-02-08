@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\AssetController;
 
 
 Route::get('/', function () {
@@ -66,6 +67,14 @@ Route::middleware(['auth', CheckNetworkContext::class])->group(function () {
     Route::get('payslips', [PayrollController::class, 'myPayslips'])->name('payslips.index');
     Route::get('payslips/{payroll}', [PayrollController::class, 'viewPayslip'])->name('payslips.show');
     Route::get('payslips/{payroll}/pdf', [PayrollController::class, 'downloadPdf'])->name('payslips.pdf');
+
+    // Asset library
+    Route::get('assets/{folderId?}', [AssetController::class, 'index'])->name('assets.index');
+    Route::post('assets/upload', [AssetController::class, 'store'])->name('assets.upload');
+    Route::post('assets/folder', [AssetController::class, 'createFolder'])->name('assets.folder.create');
+    Route::get('assets/{asset}/preview', [AssetController::class, 'preview'])->name('assets.preview');
+    Route::get('assets/{asset}/download', [AssetController::class, 'download'])->name('assets.download');
+    Route::delete('assets/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
 
     // Admin routes - protected by admin middleware
     Route::middleware('admin')->prefix('admin')->group(function () {

@@ -29,7 +29,22 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => 'employee',
+            'position' => fake()->jobTitle(),
+            'hourly_rate' => fake()->randomFloat(2, 10, 50),
+            'annual_leave_entitlement' => 12,
+            'mc_entitlement' => 14,
         ];
+    }
+
+    /**
+     * Configure the user as an admin.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
+        ]);
     }
 
     /**

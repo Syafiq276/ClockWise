@@ -13,7 +13,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-md p-6">
             <div class="flex items-center">
                 <div class="p-3 bg-blue-100 rounded-lg">
@@ -58,8 +58,8 @@
     </div>
 
     <!-- Filters -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-        <form method="GET" action="{{ route('admin.audit-logs') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
+        <form method="GET" action="{{ route('admin.audit-logs') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Action Type</label>
                 <select name="action" class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">

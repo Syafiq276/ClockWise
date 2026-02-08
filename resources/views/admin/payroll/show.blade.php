@@ -24,8 +24,8 @@
     <!-- Payslip Card -->
     <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
-            <div class="flex justify-between items-start">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                 <div>
                     <h2 class="text-xl font-bold">ClockWise</h2>
                     <p class="text-blue-100 text-sm">Payslip</p>
@@ -38,8 +38,8 @@
         </div>
 
         <!-- Employee Info -->
-        <div class="p-6 border-b">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="p-4 sm:p-6 border-b">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                     <h3 class="text-sm font-medium text-gray-500 mb-2">Employee Information</h3>
                     <p class="font-semibold text-gray-800">{{ $payroll->user->name ?? 'Unknown' }}</p>
@@ -63,7 +63,7 @@
         <!-- Work Summary -->
         <div class="p-6 border-b">
             <h3 class="text-sm font-medium text-gray-500 mb-4">Work Summary</h3>
-            <div class="grid grid-cols-4 gap-4 text-center">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                 <div class="bg-blue-50 rounded-lg p-3">
                     <p class="text-xl font-bold text-blue-600">{{ $payroll->days_worked }}</p>
                     <p class="text-xs text-gray-500">Days</p>
@@ -184,7 +184,7 @@
         <!-- Employer Contribution -->
         <div class="p-4 bg-blue-50 border-t">
             <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Employer Contribution</h4>
-            <div class="grid grid-cols-4 gap-4 text-sm">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                 <div>
                     <span class="text-gray-600">EPF:</span>
                     <span class="font-medium ml-1">RM {{ number_format($payroll->epf_employer ?? 0, 2) }}</span>
