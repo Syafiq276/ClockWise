@@ -1,8 +1,17 @@
 # Render Blueprint - ClockWise HRMS
+# Deploy: https://render.com/deploy → connect GitHub repo
+
+databases:
+  - name: clockwise-db
+    plan: free
+    databaseName: clockwise
+    user: clockwise_user
+
 services:
   - type: web
     name: clockwise
     runtime: docker
+    plan: free
     dockerfilePath: ./Dockerfile
     envVars:
       - key: APP_NAME
@@ -14,11 +23,13 @@ services:
       - key: APP_KEY
         generateValue: true
       - key: APP_URL
-        value: https://clockwise-4zoi.onrender.com
+        sync: false
       - key: DB_CONNECTION
         value: pgsql
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: clockwise-db
+          property: connectionString
       - key: LOG_CHANNEL
         value: stderr
       - key: SESSION_DRIVER

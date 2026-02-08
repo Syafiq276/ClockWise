@@ -28,13 +28,13 @@ LICENSE
 Thumbs.db
 .DS_Store
 
-# Laravel Storage (except what's needed)
-storage/
-!storage/app/public/
-!storage/framework/views/
+# Laravel Storage (rebuilt in container)
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
 public/storage
 public/hot
-public/build
 
 # Tests
 tests

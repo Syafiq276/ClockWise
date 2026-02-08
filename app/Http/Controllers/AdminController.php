@@ -384,10 +384,10 @@ class AdminController extends Controller
         $prevStart = $prevEnd->copy()->subDays($periodLength - 1)->startOfDay();
 
         // ── 1. Daily attendance ────────────────────────────────
-        $dailyAttendance = Attendance::selectRaw('date,
+        $dailyAttendance = Attendance::selectRaw("date,
                 COUNT(*) as total,
-                SUM(CASE WHEN status = "ontime" THEN 1 ELSE 0 END) as ontime,
-                SUM(CASE WHEN status = "late" THEN 1 ELSE 0 END) as late')
+                SUM(CASE WHEN status = 'ontime' THEN 1 ELSE 0 END) as ontime,
+                SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late")
             ->whereBetween('date', [$startDate, $endDate])
             ->groupBy('date')
             ->orderBy('date')
@@ -409,11 +409,16 @@ class AdminController extends Controller
             ->toArray();
 
         // ── 4. Employee hours (top 10) ─────────────────────────
+        $isPostgres = DB::connection()->getDriverName() === 'pgsql';
+        $minutesDiff = $isPostgres
+            ? DB::raw('EXTRACT(EPOCH FROM (clock_out - clock_in)) / 60')
+            : DB::raw('TIMESTAMPDIFF(MINUTE, clock_in, clock_out)');
+
         $employeeHours = User::where('role', 'employee')
             ->withSum(['attendances as total_minutes' => function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('date', [$startDate, $endDate])
                     ->whereNotNull('clock_out');
-            }], \DB::raw('TIMESTAMPDIFF(MINUTE, clock_in, clock_out)'))
+            }], $minutesDiff)
             ->orderByDesc('total_minutes')
             ->limit(10)
             ->get()
@@ -429,8 +434,8 @@ class AdminController extends Controller
             $weekEnd   = now()->subWeeks($i)->endOfWeek();
 
             $weekData = Attendance::whereBetween('date', [$weekStart, $weekEnd])
-                ->selectRaw('COUNT(*) as total,
-                    SUM(CASE WHEN status = "ontime" THEN 1 ELSE 0 END) as ontime')
+                ->selectRaw("COUNT(*) as total,
+                    SUM(CASE WHEN status = 'ontime' THEN 1 ELSE 0 END) as ontime")
                 ->first();
 
             $weeklyTrend->push([
@@ -441,15 +446,16 @@ class AdminController extends Controller
         }
 
         // ── 6. Payroll cost trend (monthly) ────────────────────
-        $payrollTrend = Payroll::selectRaw('
-                DATE_FORMAT(period_start, "%Y-%m") as month,
+        $monthExpr = $isPostgres ? "TO_CHAR(period_start, 'YYYY-MM')" : "DATE_FORMAT(period_start, '%Y-%m')";
+        $payrollTrend = Payroll::selectRaw("
+                {$monthExpr} as month,
                 SUM(gross_pay) as gross,
                 SUM(net_pay) as net,
                 SUM(total_statutory) as statutory,
-                SUM(overtime_pay) as overtime')
+                SUM(overtime_pay) as overtime")
             ->whereIn('status', ['approved', 'paid'])
             ->whereBetween('period_start', [$startDate, $endDate])
-            ->groupByRaw('DATE_FORMAT(period_start, "%Y-%m")')
+            ->groupByRaw($monthExpr)
             ->orderBy('month')
             ->get();
 
@@ -488,9 +494,17 @@ class AdminController extends Controller
         })->sortByDesc('attendance_rate')->values();
 
         // ── 8. Overtime trend (daily) ──────────────────────────
-        $overtimeTrend = Attendance::selectRaw('date,
-                SUM(GREATEST(TIMESTAMPDIFF(MINUTE, clock_in, clock_out) - 480, 0)) as ot_minutes,
-                SUM(CASE WHEN TIMESTAMPDIFF(MINUTE, clock_in, clock_out) > 480 THEN 1 ELSE 0 END) as ot_count')
+        $otMinExpr = $isPostgres
+            ? "EXTRACT(EPOCH FROM (clock_out - clock_in)) / 60"
+            : "TIMESTAMPDIFF(MINUTE, clock_in, clock_out)";
+        $otSumExpr = $isPostgres
+            ? "SUM(GREATEST(({$otMinExpr}) - 480, 0))"
+            : "SUM(GREATEST({$otMinExpr} - 480, 0))";
+        $otCntExpr = "SUM(CASE WHEN ({$otMinExpr}) > 480 THEN 1 ELSE 0 END)";
+
+        $overtimeTrend = Attendance::selectRaw("date,
+                {$otSumExpr} as ot_minutes,
+                {$otCntExpr} as ot_count")
             ->whereBetween('date', [$startDate, $endDate])
             ->whereNotNull('clock_out')
             ->groupBy('date')
@@ -503,15 +517,16 @@ class AdminController extends Controller
             ]);
 
         // ── 9. Monthly leave utilisation trend ─────────────────
-        $leaveTrend = LeaveRequest::selectRaw('
-                DATE_FORMAT(start_date, "%Y-%m") as month,
+        $leaveMonthExpr = $isPostgres ? "TO_CHAR(start_date, 'YYYY-MM')" : "DATE_FORMAT(start_date, '%Y-%m')";
+        $leaveTrend = LeaveRequest::selectRaw("
+                {$leaveMonthExpr} as month,
                 SUM(days) as total_days,
-                SUM(CASE WHEN type = "annual" THEN days ELSE 0 END) as annual,
-                SUM(CASE WHEN type = "mc" THEN days ELSE 0 END) as medical,
-                SUM(CASE WHEN type = "emergency" THEN days ELSE 0 END) as emergency')
+                SUM(CASE WHEN type = 'annual' THEN days ELSE 0 END) as annual,
+                SUM(CASE WHEN type = 'mc' THEN days ELSE 0 END) as medical,
+                SUM(CASE WHEN type = 'emergency' THEN days ELSE 0 END) as emergency")
             ->where('status', 'approved')
             ->whereBetween('start_date', [$startDate, $endDate])
-            ->groupByRaw('DATE_FORMAT(start_date, "%Y-%m")')
+            ->groupByRaw($leaveMonthExpr)
             ->orderBy('month')
             ->get();
 
@@ -522,15 +537,19 @@ class AdminController extends Controller
         $currentOntime = Attendance::whereBetween('date', [$startDate, $endDate])->where('status', 'ontime')->count();
         $prevOntime    = Attendance::whereBetween('date', [$prevStart, $prevEnd])->where('status', 'ontime')->count();
 
+        $avgExpr = $isPostgres
+            ? 'AVG(EXTRACT(EPOCH FROM (clock_out - clock_in)) / 60) as avg'
+            : 'AVG(TIMESTAMPDIFF(MINUTE, clock_in, clock_out)) as avg';
+
         $avgHoursRaw = Attendance::whereBetween('date', [$startDate, $endDate])
             ->whereNotNull('clock_out')
-            ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, clock_in, clock_out)) as avg')
+            ->selectRaw($avgExpr)
             ->value('avg');
         $currentAvgHours = round(($avgHoursRaw ?? 0) / 60, 1);
 
         $prevAvgRaw = Attendance::whereBetween('date', [$prevStart, $prevEnd])
             ->whereNotNull('clock_out')
-            ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, clock_in, clock_out)) as avg')
+            ->selectRaw($avgExpr)
             ->value('avg');
         $prevAvgHours = round(($prevAvgRaw ?? 0) / 60, 1);
 
