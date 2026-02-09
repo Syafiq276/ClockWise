@@ -45,6 +45,9 @@ RUN mkdir -p storage/framework/{cache/data,sessions,views} \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
+# Ensure www-data owns the entire app for file uploads
+RUN chown -R www-data:www-data /var/www/html
+
 # Configure Apache to use /public
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf \
     && echo '<Directory /var/www/html/public>\n    AllowOverride All\n    Require all granted\n</Directory>' >> /etc/apache2/apache2.conf

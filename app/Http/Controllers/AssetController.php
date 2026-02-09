@@ -149,7 +149,17 @@ class AssetController extends Controller
         }
 
         $fullPath = Storage::disk('public')->path($asset->file_path);
-        return response()->file($fullPath);
+
+        if (!File::exists($fullPath)) {
+            abort(404);
+        }
+
+        $mimeType = $asset->mime_type ?: File::mimeType($fullPath);
+
+        return response()->file($fullPath, [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 
     private function isAdmin(): bool
