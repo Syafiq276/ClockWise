@@ -63,6 +63,24 @@ fi
 # Create storage link
 php artisan storage:link 2>/dev/null || true
 
+# Clean up orphaned asset records (files lost after container rebuild)
+echo "🧹 Cleaning orphaned asset records..."
+php artisan tinker --execute="
+    \$count = 0;
+    App\Models\Asset::each(function(\$asset) use (&\$count) {
+        if (!Storage::disk('public')->exists(\$asset->file_path)) {
+            \$asset->delete();
+            \$count++;
+        }
+    });
+    echo \"Removed \$count orphaned asset(s).\";
+" 2>/dev/null || true
+
+# Also clean up empty folders
+php artisan tinker --execute="
+    App\Models\Folder::doesntHave('assets')->doesntHave('children')->delete();
+" 2>/dev/null || true
+
 echo "✅ ClockWise is ready! Starting Apache..."
 
 # Start Apache

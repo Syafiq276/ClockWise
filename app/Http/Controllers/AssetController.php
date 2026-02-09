@@ -130,6 +130,11 @@ class AssetController extends Controller
         }
 
         $fullPath = Storage::disk('public')->path($asset->file_path);
+
+        if (!File::exists($fullPath)) {
+            return back()->with('error', 'File is no longer available (lost after server redeploy).');
+        }
+
         return response()->download($fullPath, $asset->original_name);
     }
 
@@ -150,8 +155,9 @@ class AssetController extends Controller
 
         $fullPath = Storage::disk('public')->path($asset->file_path);
 
+        // If file doesn't exist (e.g. lost after container redeploy), return a placeholder
         if (!File::exists($fullPath)) {
-            abort(404);
+            return $this->placeholderResponse($asset->original_name);
         }
 
         $mimeType = $asset->mime_type ?: File::mimeType($fullPath);
@@ -159,6 +165,28 @@ class AssetController extends Controller
         return response()->file($fullPath, [
             'Content-Type' => $mimeType,
             'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    /**
+     * Return a placeholder SVG when the original file is missing (ephemeral storage).
+     */
+    private function placeholderResponse(string $filename): \Illuminate\Http\Response
+    {
+        $name = e(\Illuminate\Support\Str::limit($filename, 20));
+        $svg = <<<SVG
+        <svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200">
+            <rect width="300" height="200" fill="#F1F5F9" rx="8"/>
+            <text x="150" y="85" text-anchor="middle" fill="#94A3B8" font-family="sans-serif" font-size="32">📷</text>
+            <text x="150" y="115" text-anchor="middle" fill="#94A3B8" font-family="sans-serif" font-size="12">File unavailable</text>
+            <text x="150" y="135" text-anchor="middle" fill="#CBD5E1" font-family="sans-serif" font-size="10">{$name}</text>
+            <text x="150" y="155" text-anchor="middle" fill="#CBD5E1" font-family="sans-serif" font-size="9">(lost after redeploy)</text>
+        </svg>
+        SVG;
+
+        return response($svg, 200, [
+            'Content-Type' => 'image/svg+xml',
+            'Cache-Control' => 'public, max-age=3600',
         ]);
     }
 
